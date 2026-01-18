@@ -1,261 +1,566 @@
-/* Tree Visualization Styles */
+/* ========================================
+   ENTERPRISE TREE VISUALIZATION STYLES
+======================================== */
 
+/* Tree Node Styles */
 .tree-node {
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .tree-node:hover {
-    filter: brightness(1.1);
+    filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4));
+    transform: scale(1.05);
+}
+
+.tree-node circle {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tree-node.highlighted {
-    filter: drop-shadow(0 0 10px rgba(74, 144, 226, 0.8));
+    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
+    animation: pulse-highlight 2s ease-in-out infinite;
 }
 
+@keyframes pulse-highlight {
+    0%, 100% {
+        filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
+    }
+    50% {
+        filter: drop-shadow(0 0 30px rgba(59, 130, 246, 1));
+    }
+}
+
+/* Tree Links (Connections) */
 .tree-link {
-    transition: stroke 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    stroke: #d1d5db;
+    stroke-width: 2;
 }
 
 .tree-link:hover {
-    stroke: var(--primary-color) !important;
-    stroke-width: 3 !important;
+    stroke: #3b82f6;
+    stroke-width: 3;
+    filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
 }
 
-/* Timeline View Styles */
-.timeline-axis path,
-.timeline-axis line {
-    stroke: var(--border-color);
-}
-
-.timeline-axis text {
-    fill: var(--text-secondary);
-    font-size: 12px;
-}
-
-.timeline-point {
+/* Node Text Labels */
+.tree-node text {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
     transition: all 0.3s ease;
 }
 
+.tree-node:hover text {
+    font-weight: 700;
+}
+
+/* ========================================
+   TIMELINE VIEW STYLES
+======================================== */
+.timeline-axis path,
+.timeline-axis line {
+    stroke: #e5e7eb;
+    stroke-width: 2;
+}
+
+.timeline-axis text {
+    fill: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+}
+
+.timeline-point {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
 .timeline-point:hover {
-    transform: scale(1.1);
+    transform: scale(1.15);
 }
 
 .timeline-point circle {
     stroke: white;
-    stroke-width: 2;
+    stroke-width: 3;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
+    transition: all 0.3s ease;
 }
 
-/* Grid View Styles */
+.timeline-point:hover circle {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+}
+
+.timeline-point text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.timeline-connector {
+    stroke: #e5e7eb;
+    stroke-width: 1;
+    stroke-dasharray: 4, 4;
+    opacity: 0.6;
+}
+
+/* ========================================
+   GRID VIEW STYLES
+======================================== */
 .grid-card {
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
 }
 
 .grid-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-8px);
 }
 
 .grid-card rect {
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .grid-card:hover rect {
-    stroke: var(--primary-color);
+    stroke: #3b82f6;
     stroke-width: 2;
-    box-shadow: var(--shadow-md);
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15));
 }
 
-/* Node Animations */
+.grid-card circle {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.grid-card text {
+    font-family: 'Inter', sans-serif;
+}
+
+/* ========================================
+   NODE ANIMATIONS
+======================================== */
 @keyframes nodeAppear {
     from {
         opacity: 0;
-        transform: scale(0);
+        transform: scale(0) translateY(-20px);
     }
     to {
         opacity: 1;
-        transform: scale(1);
+        transform: scale(1) translateY(0);
     }
 }
 
-.tree-node,
-.timeline-point,
-.grid-card {
-    animation: nodeAppear 0.5s ease;
+@keyframes linkAppear {
+    from {
+        opacity: 0;
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+    }
+    to {
+        opacity: 1;
+        stroke-dashoffset: 0;
+    }
 }
 
-/* Connection Lines */
+.tree-node {
+    animation: nodeAppear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tree-link {
+    animation: linkAppear 0.8s ease-out;
+}
+
+.timeline-point {
+    animation: nodeAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.grid-card {
+    animation: nodeAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Stagger animation for multiple nodes */
+.tree-node:nth-child(1) { animation-delay: 0.05s; }
+.tree-node:nth-child(2) { animation-delay: 0.1s; }
+.tree-node:nth-child(3) { animation-delay: 0.15s; }
+.tree-node:nth-child(4) { animation-delay: 0.2s; }
+.tree-node:nth-child(5) { animation-delay: 0.25s; }
+
+/* ========================================
+   CONNECTION TYPES
+======================================== */
 .connection-line {
-    stroke: #ccc;
+    stroke: #d1d5db;
     stroke-width: 2;
     fill: none;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .connection-line:hover {
-    stroke: var(--primary-color);
+    stroke: #3b82f6;
     stroke-width: 3;
 }
 
-/* Marriage Connection */
 .marriage-line {
-    stroke: var(--danger-color);
+    stroke: #f43f5e;
     stroke-width: 3;
-    stroke-dasharray: 5, 5;
+    stroke-dasharray: 8, 4;
+    filter: drop-shadow(0 2px 4px rgba(244, 63, 94, 0.3));
 }
 
-/* Parent-Child Connection */
 .parent-child-line {
-    stroke: var(--primary-color);
+    stroke: #3b82f6;
     stroke-width: 2;
 }
 
-/* Sibling Connection */
 .sibling-line {
-    stroke: var(--success-color);
+    stroke: #10b981;
     stroke-width: 2;
-    stroke-dasharray: 3, 3;
+    stroke-dasharray: 4, 4;
 }
 
-/* Node Badges */
+/* ========================================
+   NODE BADGES & INDICATORS
+======================================== */
 .node-badge {
     font-size: 10px;
     fill: white;
-    font-weight: bold;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
 }
 
 .badge-circle {
-    fill: var(--danger-color);
+    fill: #ef4444;
     stroke: white;
-    stroke-width: 1;
+    stroke-width: 2;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-/* Generation Markers */
+/* ========================================
+   GENERATION MARKERS
+======================================== */
 .generation-line {
-    stroke: var(--border-color);
+    stroke: #e5e7eb;
     stroke-width: 1;
-    stroke-dasharray: 2, 2;
-    opacity: 0.5;
+    stroke-dasharray: 4, 4;
+    opacity: 0.4;
 }
 
 .generation-label {
-    fill: var(--text-secondary);
+    fill: #9ca3af;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-/* Zoom Controls Overlay */
+.generation-group {
+    opacity: 0;
+    animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+/* ========================================
+   GENDER-SPECIFIC COLORS (MODERN PALETTE)
+======================================== */
+.node-male circle {
+    fill: url(#maleGradient);
+}
+
+.node-female circle {
+    fill: url(#femaleGradient);
+}
+
+.node-other circle {
+    fill: url(#otherGradient);
+}
+
+/* Define gradients in JavaScript/D3 */
+#maleGradient stop:first-child {
+    stop-color: #3b82f6;
+}
+
+#maleGradient stop:last-child {
+    stop-color: #2563eb;
+}
+
+#femaleGradient stop:first-child {
+    stop-color: #ec4899;
+}
+
+#femaleGradient stop:last-child {
+    stop-color: #db2777;
+}
+
+#otherGradient stop:first-child {
+    stop-color: #8b5cf6;
+}
+
+#otherGradient stop:last-child {
+    stop-color: #7c3aed;
+}
+
+/* ========================================
+   STATUS INDICATORS
+======================================== */
+.node-alive circle {
+    stroke: #10b981;
+    stroke-width: 3;
+}
+
+.node-deceased circle {
+    stroke: #6b7280;
+    stroke-width: 3;
+    opacity: 0.75;
+    filter: grayscale(20%);
+}
+
+.node-deceased text {
+    opacity: 0.8;
+}
+
+/* ========================================
+   INTERACTIVE ELEMENTS
+======================================== */
+.node-clickable {
+    cursor: pointer;
+}
+
+.node-clickable:hover {
+    filter: brightness(1.1);
+}
+
+.node-clickable:active {
+    transform: scale(0.95);
+}
+
+/* ========================================
+   SEARCH HIGHLIGHT
+======================================== */
+.search-highlight {
+    stroke: #fbbf24;
+    stroke-width: 4;
+    fill: none;
+    animation: pulse-search 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-search {
+    0%, 100% {
+        opacity: 1;
+        stroke-width: 4;
+    }
+    50% {
+        opacity: 0.6;
+        stroke-width: 6;
+    }
+}
+
+/* ========================================
+   MINIMAP (OPTIONAL FEATURE)
+======================================== */
+.minimap {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    width: 220px;
+    height: 160px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    z-index: 40;
+}
+
+.minimap-viewport {
+    fill: rgba(59, 130, 246, 0.15);
+    stroke: #3b82f6;
+    stroke-width: 2;
+    cursor: move;
+    transition: fill 0.2s ease;
+}
+
+.minimap-viewport:hover {
+    fill: rgba(59, 130, 246, 0.25);
+}
+
+.minimap-content {
+    transform-origin: center;
+}
+
+/* ========================================
+   ZOOM CONTROLS OVERLAY
+======================================== */
 .zoom-controls {
     position: absolute;
-    bottom: 2rem;
-    right: 2rem;
+    bottom: 24px;
+    right: 24px;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
     background: white;
-    padding: 0.5rem;
-    border-radius: 8px;
-    box-shadow: var(--shadow-md);
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+    z-index: 40;
 }
 
-/* Empty State */
+.zoom-controls button {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.zoom-controls button:hover {
+    background: #f9fafb;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.zoom-controls button:active {
+    transform: scale(0.95);
+}
+
+/* ========================================
+   EMPTY STATE
+======================================== */
 .empty-state {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--text-secondary);
+    color: #9ca3af;
+    padding: 48px;
+    text-align: center;
 }
 
 .empty-state-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
+    font-size: 64px;
+    margin-bottom: 24px;
+    opacity: 0.4;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 .empty-state-title {
     font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+    font-weight: 700;
+    color: #374151;
+    margin-bottom: 8px;
+    font-family: 'Inter', sans-serif;
 }
 
 .empty-state-description {
     font-size: 1rem;
-    margin-bottom: 2rem;
+    color: #6b7280;
+    margin-bottom: 32px;
+    max-width: 400px;
+    line-height: 1.6;
 }
 
-/* Search Highlight */
-.search-highlight {
-    stroke: var(--warning-color);
-    stroke-width: 4;
-    fill: none;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-/* Gender-specific colors */
-.node-male {
-    fill: #4A90E2;
-}
-
-.node-female {
-    fill: #E24A90;
-}
-
-.node-other {
-    fill: #9966CC;
-}
-
-/* Status indicators */
-.node-alive {
-    stroke: var(--success-color);
-    stroke-width: 3;
-}
-
-.node-deceased {
-    stroke: var(--text-secondary);
-    stroke-width: 3;
-    opacity: 0.7;
-}
-
-/* Interactive elements */
-.node-clickable {
-    cursor: pointer;
-}
-
-.node-clickable:hover {
-    filter: brightness(1.2);
-}
-
-/* Minimap (optional feature) */
-.minimap {
-    position: absolute;
-    bottom: 2rem;
-    left: 2rem;
-    width: 200px;
-    height: 150px;
-    background: white;
-    border: 2px solid var(--border-color);
+.empty-state-action {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
     border-radius: 8px;
-    box-shadow: var(--shadow-md);
-    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
 }
 
-.minimap-viewport {
-    fill: rgba(74, 144, 226, 0.2);
-    stroke: var(--primary-color);
-    stroke-width: 2;
-    cursor: move;
+.empty-state-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
 }
 
-/* Print styles */
+/* ========================================
+   LOADING STATE IN TREE
+======================================== */
+.tree-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+}
+
+.tree-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.tree-loading-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+======================================== */
+@media (max-width: 1024px) {
+    .minimap {
+        width: 180px;
+        height: 130px;
+        bottom: 16px;
+        left: 16px;
+    }
+
+    .zoom-controls {
+        bottom: 16px;
+        right: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .minimap {
+        display: none;
+    }
+
+    .tree-node text {
+        font-size: 11px;
+    }
+
+    .generation-label {
+        font-size: 10px;
+    }
+}
+
+/* ========================================
+   PRINT STYLES
+======================================== */
 @media print {
     .zoom-controls,
     .minimap {
@@ -269,5 +574,68 @@
     #familyTree {
         max-width: 100% !important;
         height: auto !important;
+    }
+
+    .tree-node,
+    .tree-link {
+        animation: none !important;
+    }
+
+    .tree-link {
+        stroke: #000 !important;
+    }
+
+    .tree-node text {
+        fill: #000 !important;
+    }
+}
+
+/* ========================================
+   ACCESSIBILITY
+======================================== */
+.tree-node:focus,
+.timeline-point:focus,
+.grid-card:focus {
+    outline: 3px solid #3b82f6;
+    outline-offset: 4px;
+}
+
+.tree-node:focus:not(:focus-visible),
+.timeline-point:focus:not(:focus-visible),
+.grid-card:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .tree-link {
+        stroke: #000;
+        stroke-width: 3;
+    }
+
+    .tree-node circle {
+        stroke: #000;
+        stroke-width: 3;
+    }
+
+    .tree-node text {
+        fill: #000;
+        font-weight: 700;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .tree-node,
+    .tree-link,
+    .timeline-point,
+    .grid-card {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .tree-node:hover,
+    .grid-card:hover {
+        transform: none !important;
     }
 }
