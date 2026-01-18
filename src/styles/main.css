@@ -572,12 +572,18 @@ body {
     backdrop-filter: blur(8px);
     border-radius: var(--radius-md);
     flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover .stat-icon {
+    transform: scale(1.05);
 }
 
 .stat-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     color: #ffffff;
+    transition: none;
 }
 
 .stat-content {
@@ -626,6 +632,7 @@ body {
     width: 16px;
     height: 16px;
     color: var(--color-primary-500);
+    transition: none;
 }
 
 /* Recent List & Events List */

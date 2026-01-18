@@ -31,81 +31,191 @@ class FamilyTreeApp {
     }
 
     loadSampleData() {
-        // Add sample family data
-        const rootMember = this.familyService.addMember({
-            name: 'Ramesh Kumar',
+        // Generation 1: Great-Grandparents (1920s)
+        const gen1_grandfather = this.familyService.addMember({
+            name: 'Shri Ramchandra Sharma',
             gender: 'male',
-            birthDate: '1950-03-15',
-            birthPlace: 'Mumbai, Maharashtra',
+            birthDate: '1920-01-15',
+            deathDate: '1995-06-20',
+            birthPlace: 'Varanasi, Uttar Pradesh',
             gotra: 'Bharadwaj',
-            profession: 'Business Owner',
-            isAlive: true
+            profession: 'Sanskrit Scholar',
+            isAlive: false
         });
 
-        const spouse = this.familyService.addMember({
-            name: 'Sita Devi',
+        const gen1_grandmother = this.familyService.addMember({
+            name: 'Smt. Lakshmi Devi',
             gender: 'female',
-            birthDate: '1953-07-20',
-            birthPlace: 'Pune, Maharashtra',
-            profession: 'Teacher',
+            birthDate: '1925-03-10',
+            deathDate: '2000-12-15',
+            birthPlace: 'Allahabad, Uttar Pradesh',
+            profession: 'Homemaker',
+            isAlive: false
+        });
+
+        this.familyService.addSpouse(gen1_grandfather.id, gen1_grandmother.id, '1940-05-12');
+
+        // Generation 2: Grandparents (1940s-1950s)
+        const gen2_son1 = this.familyService.addMember({
+            name: 'Shri Ramesh Kumar Sharma',
+            gender: 'male',
+            birthDate: '1945-08-20',
+            birthPlace: 'Varanasi, Uttar Pradesh',
+            gotra: 'Bharadwaj',
+            profession: 'Government Officer (Retired)',
+            isAlive: true,
+            parentIds: [gen1_grandfather.id, gen1_grandmother.id]
+        });
+
+        const gen2_daughter1 = this.familyService.addMember({
+            name: 'Smt. Saraswati Mishra',
+            gender: 'female',
+            birthDate: '1948-11-05',
+            birthPlace: 'Lucknow, Uttar Pradesh',
+            profession: 'School Principal (Retired)',
+            isAlive: true,
+            parentIds: [gen1_grandfather.id, gen1_grandmother.id]
+        });
+
+        const gen2_son1_wife = this.familyService.addMember({
+            name: 'Smt. Geeta Devi Sharma',
+            gender: 'female',
+            birthDate: '1950-02-14',
+            birthPlace: 'Kanpur, Uttar Pradesh',
+            profession: 'Teacher (Retired)',
             isAlive: true
         });
 
-        this.familyService.addSpouse(rootMember.id, spouse.id, '1972-05-10');
+        this.familyService.addSpouse(gen2_son1.id, gen2_son1_wife.id, '1970-04-15');
 
-        // Add children
-        const child1 = this.familyService.addMember({
-            name: 'Rajesh Kumar',
+        // Generation 3: Parents (1970s)
+        const gen3_son1 = this.familyService.addMember({
+            name: 'Rajesh Kumar Sharma',
             gender: 'male',
-            birthDate: '1975-02-14',
-            birthPlace: 'Mumbai, Maharashtra',
+            birthDate: '1972-06-10',
+            birthPlace: 'Delhi, India',
             gotra: 'Bharadwaj',
             profession: 'Software Engineer',
+            education: 'B.Tech IIT Delhi',
             isAlive: true,
-            parentIds: [rootMember.id, spouse.id]
+            parentIds: [gen2_son1.id, gen2_son1_wife.id]
         });
 
-        const child2 = this.familyService.addMember({
-            name: 'Priya Sharma',
+        const gen3_daughter1 = this.familyService.addMember({
+            name: 'Priya Verma',
             gender: 'female',
-            birthDate: '1978-08-22',
+            birthDate: '1975-03-22',
             birthPlace: 'Mumbai, Maharashtra',
-            profession: 'Doctor',
+            profession: 'Doctor (Pediatrician)',
+            education: 'MBBS, MD',
             isAlive: true,
-            parentIds: [rootMember.id, spouse.id]
+            parentIds: [gen2_son1.id, gen2_son1_wife.id]
         });
 
-        // Add grandchildren
-        const child1Spouse = this.familyService.addMember({
-            name: 'Anjali Kumar',
-            gender: 'female',
-            birthDate: '1977-06-10',
+        const gen3_son2 = this.familyService.addMember({
+            name: 'Amit Kumar Sharma',
+            gender: 'male',
+            birthDate: '1978-09-18',
             birthPlace: 'Delhi, India',
+            gotra: 'Bharadwaj',
+            profession: 'Business Analyst',
+            education: 'MBA',
+            isAlive: true,
+            parentIds: [gen2_son1.id, gen2_son1_wife.id]
+        });
+
+        const gen3_son1_wife = this.familyService.addMember({
+            name: 'Anjali Sharma',
+            gender: 'female',
+            birthDate: '1974-11-25',
+            birthPlace: 'Bangalore, Karnataka',
             profession: 'Architect',
+            education: 'B.Arch',
             isAlive: true
         });
 
-        this.familyService.addSpouse(child1.id, child1Spouse.id, '2000-12-15');
-
-        this.familyService.addMember({
-            name: 'Arjun Kumar',
-            gender: 'male',
-            birthDate: '2002-03-05',
-            birthPlace: 'Bangalore, Karnataka',
-            gotra: 'Bharadwaj',
-            profession: 'Student',
-            isAlive: true,
-            parentIds: [child1.id, child1Spouse.id]
+        const gen3_son2_wife = this.familyService.addMember({
+            name: 'Neha Sharma',
+            gender: 'female',
+            birthDate: '1980-07-08',
+            birthPlace: 'Pune, Maharashtra',
+            profession: 'HR Manager',
+            education: 'MBA HR',
+            isAlive: true
         });
 
-        this.familyService.addMember({
-            name: 'Kavya Kumar',
-            gender: 'female',
-            birthDate: '2005-09-18',
+        this.familyService.addSpouse(gen3_son1.id, gen3_son1_wife.id, '1998-11-20');
+        this.familyService.addSpouse(gen3_son2.id, gen3_son2_wife.id, '2005-12-10');
+
+        // Generation 4: Current Generation (2000s-2010s)
+        const gen4_son1 = this.familyService.addMember({
+            name: 'Arjun Sharma',
+            gender: 'male',
+            birthDate: '2000-04-15',
             birthPlace: 'Bangalore, Karnataka',
-            profession: 'Student',
+            gotra: 'Bharadwaj',
+            profession: 'Software Developer',
+            education: 'B.Tech Computer Science',
             isAlive: true,
-            parentIds: [child1.id, child1Spouse.id]
+            parentIds: [gen3_son1.id, gen3_son1_wife.id]
+        });
+
+        const gen4_daughter1 = this.familyService.addMember({
+            name: 'Kavya Sharma',
+            gender: 'female',
+            birthDate: '2003-08-22',
+            birthPlace: 'Bangalore, Karnataka',
+            profession: 'Student (Engineering)',
+            education: 'B.Tech pursuing',
+            isAlive: true,
+            parentIds: [gen3_son1.id, gen3_son1_wife.id]
+        });
+
+        const gen4_son2 = this.familyService.addMember({
+            name: 'Rohan Sharma',
+            gender: 'male',
+            birthDate: '2007-01-10',
+            birthPlace: 'Delhi, India',
+            gotra: 'Bharadwaj',
+            profession: 'Student (12th Grade)',
+            education: 'High School',
+            isAlive: true,
+            parentIds: [gen3_son2.id, gen3_son2_wife.id]
+        });
+
+        const gen4_daughter2 = this.familyService.addMember({
+            name: 'Isha Sharma',
+            gender: 'female',
+            birthDate: '2010-05-18',
+            birthPlace: 'Delhi, India',
+            profession: 'Student (9th Grade)',
+            education: 'High School',
+            isAlive: true,
+            parentIds: [gen3_son2.id, gen3_son2_wife.id]
+        });
+
+        // Generation 5: Young Generation (2020s)
+        const gen4_son1_wife = this.familyService.addMember({
+            name: 'Riya Sharma',
+            gender: 'female',
+            birthDate: '2002-09-30',
+            birthPlace: 'Hyderabad, Telangana',
+            profession: 'UI/UX Designer',
+            education: 'B.Des',
+            isAlive: true
+        });
+
+        this.familyService.addSpouse(gen4_son1.id, gen4_son1_wife.id, '2024-02-14');
+
+        const gen5_son1 = this.familyService.addMember({
+            name: 'Aditya Sharma',
+            gender: 'male',
+            birthDate: '2025-12-05',
+            birthPlace: 'Bangalore, Karnataka',
+            gotra: 'Bharadwaj',
+            profession: 'Infant',
+            isAlive: true,
+            parentIds: [gen4_son1.id, gen4_son1_wife.id]
         });
     }
 

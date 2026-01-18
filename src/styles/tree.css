@@ -4,17 +4,20 @@
 
 /* Tree Node Styles */
 .tree-node {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: filter 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .tree-node:hover {
     filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.4));
-    transform: scale(1.05);
 }
 
 .tree-node circle {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tree-node text {
+    pointer-events: none;
 }
 
 .tree-node.highlighted {
