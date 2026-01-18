@@ -1,0 +1,269 @@
+import FamilyTreeService from '../services/FamilyTreeService.js';
+import TreeRenderer from './TreeRenderer.js';
+import MemberModal from './MemberModal.js';
+import { debounce } from '../utils/helpers.js';
+
+class FamilyTreeApp {
+    constructor() {
+        this.familyService = new FamilyTreeService();
+        this.treeRenderer = null;
+        this.memberModal = null;
+        this.currentZoom = 1;
+        this.currentView = 'tree';
+    }
+
+    init() {
+        // Initialize components
+        this.treeRenderer = new TreeRenderer('#familyTree', this.familyService);
+        this.memberModal = new MemberModal(this.familyService);
+
+        // Load initial data
+        this.loadSampleData();
+
+        // Bind event listeners
+        this.bindEvents();
+
+        // Initial render
+        this.render();
+
+        // Update statistics
+        this.updateStatistics();
+    }
+
+    loadSampleData() {
+        // Add sample family data
+        const rootMember = this.familyService.addMember({
+            name: 'Ramesh Kumar',
+            gender: 'male',
+            birthDate: '1950-03-15',
+            birthPlace: 'Mumbai, Maharashtra',
+            gotra: 'Bharadwaj',
+            profession: 'Business Owner',
+            isAlive: true
+        });
+
+        const spouse = this.familyService.addMember({
+            name: 'Sita Devi',
+            gender: 'female',
+            birthDate: '1953-07-20',
+            birthPlace: 'Pune, Maharashtra',
+            profession: 'Teacher',
+            isAlive: true
+        });
+
+        this.familyService.addSpouse(rootMember.id, spouse.id, '1972-05-10');
+
+        // Add children
+        const child1 = this.familyService.addMember({
+            name: 'Rajesh Kumar',
+            gender: 'male',
+            birthDate: '1975-02-14',
+            birthPlace: 'Mumbai, Maharashtra',
+            gotra: 'Bharadwaj',
+            profession: 'Software Engineer',
+            isAlive: true,
+            parentIds: [rootMember.id, spouse.id]
+        });
+
+        const child2 = this.familyService.addMember({
+            name: 'Priya Sharma',
+            gender: 'female',
+            birthDate: '1978-08-22',
+            birthPlace: 'Mumbai, Maharashtra',
+            profession: 'Doctor',
+            isAlive: true,
+            parentIds: [rootMember.id, spouse.id]
+        });
+
+        // Add grandchildren
+        const child1Spouse = this.familyService.addMember({
+            name: 'Anjali Kumar',
+            gender: 'female',
+            birthDate: '1977-06-10',
+            birthPlace: 'Delhi, India',
+            profession: 'Architect',
+            isAlive: true
+        });
+
+        this.familyService.addSpouse(child1.id, child1Spouse.id, '2000-12-15');
+
+        this.familyService.addMember({
+            name: 'Arjun Kumar',
+            gender: 'male',
+            birthDate: '2002-03-05',
+            birthPlace: 'Bangalore, Karnataka',
+            gotra: 'Bharadwaj',
+            profession: 'Student',
+            isAlive: true,
+            parentIds: [child1.id, child1Spouse.id]
+        });
+
+        this.familyService.addMember({
+            name: 'Kavya Kumar',
+            gender: 'female',
+            birthDate: '2005-09-18',
+            birthPlace: 'Bangalore, Karnataka',
+            profession: 'Student',
+            isAlive: true,
+            parentIds: [child1.id, child1Spouse.id]
+        });
+    }
+
+    bindEvents() {
+        // Add member button
+        document.getElementById('addMemberBtn')?.addEventListener('click', () => {
+            this.memberModal.open();
+        });
+
+        // Search input
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce((e) => {
+                this.handleSearch(e.target.value);
+            }, 300));
+        }
+
+        // View mode selector
+        document.getElementById('viewMode')?.addEventListener('change', (e) => {
+            this.currentView = e.target.value;
+            this.render();
+        });
+
+        // Generation filter
+        document.getElementById('generationFilter')?.addEventListener('change', (e) => {
+            const generation = e.target.value === 'all' ? null : parseInt(e.target.value);
+            this.filterByGeneration(generation);
+        });
+
+        // Zoom controls
+        document.getElementById('zoomInBtn')?.addEventListener('click', () => {
+            this.currentZoom *= 1.2;
+            this.treeRenderer.setZoom(this.currentZoom);
+        });
+
+        document.getElementById('zoomOutBtn')?.addEventListener('click', () => {
+            this.currentZoom /= 1.2;
+            this.treeRenderer.setZoom(this.currentZoom);
+        });
+
+        document.getElementById('resetZoomBtn')?.addEventListener('click', () => {
+            this.currentZoom = 1;
+            this.treeRenderer.setZoom(this.currentZoom);
+        });
+
+        // Export button
+        document.getElementById('exportBtn')?.addEventListener('click', () => {
+            this.exportData();
+        });
+
+        // Print button
+        document.getElementById('printBtn')?.addEventListener('click', () => {
+            window.print();
+        });
+
+        // Listen for data changes
+        window.addEventListener('familyDataChanged', () => {
+            this.render();
+            this.updateStatistics();
+        });
+    }
+
+    render() {
+        const members = this.familyService.getAllMembers();
+
+        switch (this.currentView) {
+            case 'tree':
+                this.treeRenderer.renderTree(members);
+                break;
+            case 'timeline':
+                this.treeRenderer.renderTimeline(members);
+                break;
+            case 'grid':
+                this.treeRenderer.renderGrid(members);
+                break;
+        }
+    }
+
+    handleSearch(query) {
+        if (!query.trim()) {
+            this.render();
+            return;
+        }
+
+        const results = this.familyService.searchMembers(query);
+        this.treeRenderer.highlightMembers(results.map(m => m.id));
+    }
+
+    filterByGeneration(generation) {
+        if (generation === null) {
+            this.render();
+            return;
+        }
+
+        const members = this.familyService.getMembersByGeneration(generation);
+        this.treeRenderer.filterMembers(members.map(m => m.id));
+    }
+
+    updateStatistics() {
+        const stats = this.familyService.getStatistics();
+
+        document.getElementById('totalMembers').textContent = stats.totalMembers;
+        document.getElementById('totalGenerations').textContent = stats.generations;
+        document.getElementById('totalMales').textContent = stats.males;
+        document.getElementById('totalFemales').textContent = stats.females;
+
+        // Update recent members
+        this.updateRecentMembers();
+
+        // Update upcoming events
+        this.updateUpcomingEvents();
+    }
+
+    updateRecentMembers() {
+        const container = document.getElementById('recentMembers');
+        const recentMembers = this.familyService.getRecentMembers(5);
+
+        container.innerHTML = recentMembers.map(member => `
+            <div class="recent-item">
+                <span class="member-icon">${member.gender === 'male' ? '👨' : '👩'}</span>
+                <span class="member-name">${member.name}</span>
+            </div>
+        `).join('');
+    }
+
+    updateUpcomingEvents() {
+        const container = document.getElementById('upcomingEvents');
+        const events = this.familyService.getUpcomingBirthdays(5);
+
+        if (events.length === 0) {
+            container.innerHTML = '<p class="no-events">No upcoming events</p>';
+            return;
+        }
+
+        container.innerHTML = events.map(event => `
+            <div class="event-item">
+                <span class="event-icon">🎂</span>
+                <div class="event-details">
+                    <div class="event-name">${event.member.name}</div>
+                    <div class="event-date">${event.date}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    exportData() {
+        const data = this.familyService.exportData();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `family-tree-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+}
+
+export default FamilyTreeApp;

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Family Tree - Enterprise Edition</title>
+    <link rel="stylesheet" href="/src/styles/main.css">
+    <link rel="stylesheet" href="/src/styles/tree.css">
+    <link rel="stylesheet" href="/src/styles/modal.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1 class="app-title">🌳 Indian Family Tree</h1>
+                <p class="app-subtitle">Enterprise Edition</p>
+            </div>
+            <div class="header-right">
+                <button id="addMemberBtn" class="btn btn-primary">
+                    <span class="icon">➕</span> Add Member
+                </button>
+                <button id="settingsBtn" class="btn btn-secondary">
+                    <span class="icon">⚙️</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search family members...">
+            </div>
+
+            <div class="toolbar-section">
+                <label>View Mode:</label>
+                <select id="viewMode" class="select-input">
+                    <option value="tree">Tree View</option>
+                    <option value="timeline">Timeline</option>
+                    <option value="grid">Grid View</option>
+                </select>
+            </div>
+
+            <div class="toolbar-section">
+                <label>Generation:</label>
+                <select id="generationFilter" class="select-input">
+                    <option value="all">All Generations</option>
+                    <option value="1">Generation 1</option>
+                    <option value="2">Generation 2</option>
+                    <option value="3">Generation 3</option>
+                    <option value="4">Generation 4</option>
+                </select>
+            </div>
+
+            <div class="toolbar-section">
+                <button id="zoomInBtn" class="btn btn-icon" title="Zoom In">🔍+</button>
+                <button id="zoomOutBtn" class="btn btn-icon" title="Zoom Out">🔍-</button>
+                <button id="resetZoomBtn" class="btn btn-icon" title="Reset">🔄</button>
+            </div>
+
+            <div class="toolbar-section">
+                <button id="exportBtn" class="btn btn-secondary">
+                    <span class="icon">📥</span> Export
+                </button>
+                <button id="printBtn" class="btn btn-secondary">
+                    <span class="icon">🖨️</span> Print
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <h3>Family Statistics</h3>
+                </div>
+                <div class="stats-container" id="statsContainer">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalMembers">0</div>
+                        <div class="stat-label">Total Members</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalGenerations">0</div>
+                        <div class="stat-label">Generations</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalMales">0</div>
+                        <div class="stat-label">Males</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalFemales">0</div>
+                        <div class="stat-label">Females</div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h4>Recent Additions</h4>
+                    <div id="recentMembers" class="recent-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h4>Upcoming Events</h4>
+                    <div id="upcomingEvents" class="events-list">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Tree Canvas -->
+            <div class="tree-container">
+                <svg id="familyTree" width="100%" height="100%"></svg>
+                <div id="tooltip" class="tooltip"></div>
+            </div>
+        </main>
+
+        <!-- Member Details Modal -->
+        <div id="memberModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Member Details</h2>
+                    <button class="modal-close" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- Form will be inserted here -->
+                </div>
+                <div class="modal-footer">
+                    <button id="cancelBtn" class="btn btn-secondary">Cancel</button>
+                    <button id="saveBtn" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
