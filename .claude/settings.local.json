@@ -9,7 +9,8 @@
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
       "Bash(npm run build:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(firebase deploy:*)"
     ]
   }
 }
