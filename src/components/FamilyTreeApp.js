@@ -774,6 +774,47 @@ class FamilyTreeApp {
             isAlive: true,
             parentIds: [gen4_10.id, gen4_10_wife.id]
         });
+
+        // ===== ADDITIONAL MEMBERS (61-63) - Special Indian Scenarios =====
+
+        // Gen 3: Adopted son of Rahul Sharma (represents adoption in Indian families)
+        const gen3_adopted = this.familyService.addMember({
+            name: 'Siddharth Sharma',
+            gender: 'male',
+            birthDate: '1982-10-15',
+            birthPlace: 'Pune, Maharashtra',
+            gotra: 'Bharadwaj',
+            profession: 'CA & Tax Consultant',
+            education: 'BCom, CA, CFA',
+            isAlive: true,
+            parentIds: [gen3_cousin5.id]
+        });
+
+        // Gen 4: Child of adopted son
+        const gen4_adopted_child = this.familyService.addMember({
+            name: 'Aarush Sharma',
+            gender: 'male',
+            birthDate: '2012-06-28',
+            birthPlace: 'Pune, Maharashtra',
+            gotra: 'Bharadwaj',
+            profession: 'Student',
+            education: '7th Grade',
+            isAlive: true,
+            parentIds: [gen3_adopted.id]
+        });
+
+        // Gen 2: Widowed great-aunt (never remarried - common in older Indian society)
+        const gen2_widowed_aunt = this.familyService.addMember({
+            name: 'Late Smt. Shanti Devi',
+            gender: 'female',
+            birthDate: '1940-04-18',
+            deathDate: '2022-01-05',
+            birthPlace: 'Mathura, Uttar Pradesh',
+            profession: 'Freedom Fighter & Social Worker',
+            education: 'BA Literature',
+            isAlive: false,
+            parentIds: [gen1_paternal_gf.id, gen1_paternal_gm.id]
+        });
     }
 
     bindEvents() {
