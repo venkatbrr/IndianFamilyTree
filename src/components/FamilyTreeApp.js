@@ -4,12 +4,30 @@ import MemberModal from './MemberModal.js';
 import { debounce } from '../utils/helpers.js';
 
 class FamilyTreeApp {
-    constructor() {
-        this.familyService = new FamilyTreeService();
+    constructor(familyService = null) {
+        // Use provided service or create local one
+        this.familyService = familyService || new FamilyTreeService();
         this.treeRenderer = null;
         this.memberModal = null;
         this.currentZoom = 1;
         this.currentView = 'tree';
+    }
+
+    // Initialize with external service (e.g., Firestore)
+    // Does not load sample data - expects data to be loaded by the service
+    initWithService() {
+        // Initialize components
+        this.treeRenderer = new TreeRenderer('#familyTree', this.familyService);
+        this.memberModal = new MemberModal(this.familyService);
+
+        // Bind event listeners
+        this.bindEvents();
+
+        // Initial render
+        this.render();
+
+        // Update statistics
+        this.updateStatistics();
     }
 
     init() {
