@@ -13,6 +13,9 @@ class FamilyTreeApp {
     }
 
     init() {
+        // Clear existing data to load fresh sample data
+        this.familyService.clearAllData();
+
         // Initialize components
         this.treeRenderer = new TreeRenderer('#familyTree', this.familyService);
         this.memberModal = new MemberModal(this.familyService);

@@ -46,7 +46,14 @@ class FamilyTreeService {
     }
 
     getAllMembers() {
-        return [...this.members];
+        // Return members with spouse info attached
+        return this.members.map(member => {
+            const spouse = this.getSpouse(member.id);
+            return {
+                ...member,
+                spouseId: spouse ? spouse.id : null
+            };
+        });
     }
 
     // Relationship Management

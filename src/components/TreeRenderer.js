@@ -65,10 +65,15 @@ class TreeRenderer {
         // Build hierarchy
         const root = this.buildHierarchy(members);
 
+        // Calculate dynamic size based on number of members
+        const nodeCount = root.descendants().length;
+        const dynamicWidth = Math.max(this.width - 100, nodeCount * 80);
+        const dynamicHeight = Math.max(this.height - 100, root.height * 150);
+
         // Create tree layout
         const treeLayout = d3.tree()
-            .size([this.width - 200, this.height - 200])
-            .separation((a, b) => a.parent === b.parent ? 1 : 1.5);
+            .size([dynamicWidth, dynamicHeight])
+            .separation((a, b) => a.parent === b.parent ? 1.2 : 2);
 
         const treeData = treeLayout(root);
 
@@ -80,23 +85,48 @@ class TreeRenderer {
     }
 
     buildHierarchy(members) {
-        // Find root member (oldest ancestor with no parents)
-        const rootMember = members.find(m => !m.parentIds || m.parentIds.length === 0);
+        // Find all root members (ancestors with no parents - Generation 1)
+        const rootMembers = members.filter(m => !m.parentIds || m.parentIds.length === 0);
 
-        if (!rootMember) {
-            // If no clear root, use first member
-            return d3.hierarchy({ ...members[0], children: [] });
+        if (rootMembers.length === 0) {
+            return d3.hierarchy({ name: 'Family', children: [] });
         }
+
+        // Track which members have been added to avoid duplicates
+        const addedMemberIds = new Set();
 
         // Build tree structure recursively
         const buildNode = (memberId) => {
+            if (addedMemberIds.has(memberId)) return null;
+
             const member = members.find(m => m.id === memberId);
             if (!member) return null;
 
-            const children = members
-                .filter(m => m.parentIds && m.parentIds.includes(memberId))
+            addedMemberIds.add(memberId);
+
+            // Find children (members who have this member as a parent)
+            const childMembers = members.filter(m =>
+                m.parentIds && m.parentIds.includes(memberId) && !addedMemberIds.has(m.id)
+            );
+
+            const children = childMembers
                 .map(child => buildNode(child.id))
                 .filter(node => node !== null);
+
+            // Find spouse if exists
+            const spouse = members.find(m =>
+                m.spouseId === memberId || member.spouseId === m.id
+            );
+
+            if (spouse && !addedMemberIds.has(spouse.id)) {
+                addedMemberIds.add(spouse.id);
+                // Add spouse's children too
+                const spouseChildren = members.filter(m =>
+                    m.parentIds && m.parentIds.includes(spouse.id) && !addedMemberIds.has(m.id)
+                ).map(child => buildNode(child.id)).filter(node => node !== null);
+
+                children.push(...spouseChildren);
+            }
 
             return {
                 ...member,
@@ -104,8 +134,19 @@ class TreeRenderer {
             };
         };
 
-        const hierarchyData = buildNode(rootMember.id);
-        return d3.hierarchy(hierarchyData);
+        // Create a virtual root that contains all Generation 1 members
+        const rootNodes = rootMembers.map(root => buildNode(root.id)).filter(n => n !== null);
+
+        // If we have multiple root ancestors, create a family root node
+        if (rootNodes.length > 1) {
+            return d3.hierarchy({
+                name: 'Sharma Family',
+                isVirtualRoot: true,
+                children: rootNodes
+            });
+        }
+
+        return d3.hierarchy(rootNodes[0] || { name: 'Family', children: [] });
     }
 
     drawLinks(links) {
@@ -113,8 +154,11 @@ class TreeRenderer {
             .attr('class', 'links')
             .attr('transform', `translate(${this.width / 2}, 100)`);
 
+        // Filter out links from virtual root
+        const displayLinks = links.filter(link => !link.source.data.isVirtualRoot);
+
         linkGroup.selectAll('path')
-            .data(links)
+            .data(displayLinks)
             .enter()
             .append('path')
             .attr('class', 'tree-link')
@@ -124,7 +168,7 @@ class TreeRenderer {
             )
             .attr('fill', 'none')
             .attr('stroke', '#ccc')
-            .attr('stroke-width', 2);
+            .attr('stroke-width', 1.5);
     }
 
     drawNodes(nodes) {
@@ -132,47 +176,58 @@ class TreeRenderer {
             .attr('class', 'nodes')
             .attr('transform', `translate(${this.width / 2}, 100)`);
 
+        // Filter out virtual root node from display
+        const displayNodes = nodes.filter(d => !d.data.isVirtualRoot);
+
         const node = nodeGroup.selectAll('g')
-            .data(nodes)
+            .data(displayNodes)
             .enter()
             .append('g')
-            .attr('class', d => `tree-node ${this.highlightedIds.has(d.data.id) ? 'highlighted' : ''}`)
+            .attr('class', d => `tree-node ${this.highlightedIds.has(d.data.id) ? 'highlighted' : ''} ${!d.data.isAlive ? 'deceased' : ''}`)
             .attr('transform', d => `translate(${d.x}, ${d.y})`)
             .style('cursor', 'pointer')
             .on('click', (event, d) => this.handleNodeClick(d.data));
 
         // Add circle for each node
         node.append('circle')
-            .attr('r', 30)
-            .attr('fill', d => d.data.gender === 'male' ? '#4A90E2' : '#E24A90')
-            .attr('stroke', '#fff')
-            .attr('stroke-width', 3);
+            .attr('r', 25)
+            .attr('fill', d => {
+                if (!d.data.isAlive) return '#888';
+                return d.data.gender === 'male' ? '#4A90E2' : '#E24A90';
+            })
+            .attr('stroke', d => !d.data.isAlive ? '#555' : '#fff')
+            .attr('stroke-width', 2);
 
         // Add icon
         node.append('text')
             .attr('text-anchor', 'middle')
             .attr('dy', 5)
-            .attr('font-size', '24px')
+            .attr('font-size', '18px')
             .text(d => d.data.gender === 'male' ? '👨' : '👩');
 
-        // Add name label
+        // Add name label (shortened for display)
         node.append('text')
             .attr('text-anchor', 'middle')
-            .attr('dy', 50)
-            .attr('font-size', '12px')
+            .attr('dy', 42)
+            .attr('font-size', '9px')
             .attr('font-weight', 'bold')
-            .text(d => d.data.name);
+            .text(d => {
+                const name = d.data.name || '';
+                // Remove prefixes and shorten name
+                const shortName = name.replace(/^(Pandit |Shri |Smt\. |Late |Dr\. |Baby )/g, '');
+                return shortName.length > 18 ? shortName.substring(0, 16) + '...' : shortName;
+            });
 
         // Add birth year
         node.append('text')
             .attr('text-anchor', 'middle')
-            .attr('dy', 65)
-            .attr('font-size', '10px')
+            .attr('dy', 54)
+            .attr('font-size', '8px')
             .attr('fill', '#666')
             .text(d => {
                 if (d.data.birthDate) {
                     const year = new Date(d.data.birthDate).getFullYear();
-                    return d.data.isAlive ? `b. ${year}` : `${year} - ${d.data.deathDate ? new Date(d.data.deathDate).getFullYear() : ''}`;
+                    return d.data.isAlive ? `b. ${year}` : `${year} - ${d.data.deathDate ? new Date(d.data.deathDate).getFullYear() : '?'}`;
                 }
                 return '';
             });
