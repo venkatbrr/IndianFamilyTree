@@ -217,7 +217,17 @@ async function loadUserTrees() {
 
     try {
         console.log('Loading user trees...');
-        const trees = await firestoreFamilyService.getFamilyTrees();
+
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout loading trees')), 10000)
+        );
+
+        const trees = await Promise.race([
+            firestoreFamilyService.getFamilyTrees(),
+            timeoutPromise
+        ]);
+
         console.log('Found trees:', trees.length);
 
         hideLoading();

@@ -61,12 +61,24 @@ class FirestoreFamilyService {
 
     // Get all family trees for current user
     async getFamilyTrees() {
-        const treesRef = this.getUserTreesRef();
-        const snapshot = await getDocs(query(treesRef, orderBy('createdAt', 'desc')));
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        try {
+            const treesRef = this.getUserTreesRef();
+            // Simple query without ordering to avoid index requirement
+            const snapshot = await getDocs(treesRef);
+            const trees = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            // Sort client-side
+            return trees.sort((a, b) => {
+                const aTime = a.createdAt?.toMillis?.() || 0;
+                const bTime = b.createdAt?.toMillis?.() || 0;
+                return bTime - aTime;
+            });
+        } catch (error) {
+            console.error('Error getting family trees:', error);
+            return [];
+        }
     }
 
     // Load a specific family tree
