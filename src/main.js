@@ -27,25 +27,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Cache DOM elements
     cacheElements();
 
+    // Show loading overlay immediately
+    showLoading();
+
     // Bind auth event listeners
     bindAuthEvents();
 
-    // Subscribe to auth state changes
+    // Subscribe to auth state changes. This handler will manage the UI.
     authService.onAuthStateChange(handleAuthStateChange);
 
-    // Initialize auth - this will trigger handleAuthStateChange
+    // Initialize auth. This will trigger the onAuthStateChange handler.
     try {
         console.log('Initializing auth service...');
-        const user = await authService.init();
-        console.log('Auth initialized, user:', user ? user.email : 'none');
-
-        // If no user after init, make sure we show unauthenticated UI
-        if (!user) {
-            console.log('No user found, showing welcome screen');
-            showUnauthenticatedUI();
-        }
+        await authService.init();
+        console.log('Auth initialization process started.');
     } catch (error) {
         console.error('Auth init error:', error);
+        // As a fallback, show the unauthenticated UI. 
+        // The auth state handler will likely have been called with null anyway.
         showUnauthenticatedUI();
     }
 });
@@ -137,13 +136,13 @@ async function handleSignOut() {
     app = null;
 
     await authService.signOut();
-    hideLoading();
+    // handleAuthStateChange will be called with null, which will hide loading
 }
 
 async function handleAuthStateChange(user) {
     console.log('handleAuthStateChange called:', user ? user.email : 'signed out');
 
-    // Always hide loading first
+    // This is now the single point of truth for showing/hiding the main UI
     hideLoading();
 
     if (user) {
@@ -156,7 +155,6 @@ async function handleAuthStateChange(user) {
             await loadUserTrees();
         } catch (error) {
             console.error('Error in loadUserTrees:', error);
-            // Still show the create tree modal as fallback
             showCreateTreeModal();
         }
     } else {
@@ -169,29 +167,19 @@ async function handleAuthStateChange(user) {
 function showAuthenticatedUI(user) {
     console.log('Showing authenticated UI for:', user.displayName);
 
-    // Hide welcome screen
     if (welcomeScreen) {
-        welcomeScreen.classList.add('hidden');
         welcomeScreen.style.display = 'none';
     }
-
-    // Show main app area
     if (mainApp) {
+        mainApp.style.display = 'flex';
         mainApp.classList.remove('hidden');
     }
-
-    // Update header - hide sign in, show user menu
     if (authSection) {
-        authSection.classList.add('hidden');
         authSection.style.display = 'none';
-        console.log('Auth section hidden');
-    } else {
-        console.warn('authSection not found!');
     }
     if (userSection) {
-        userSection.classList.remove('hidden');
         userSection.style.display = 'flex';
-        console.log('User section shown');
+        userSection.classList.remove('hidden');
     }
 
     // Update user info
@@ -209,36 +197,30 @@ function showAuthenticatedUI(user) {
 function showUnauthenticatedUI() {
     console.log('Showing unauthenticated UI');
 
-    // Show welcome screen
     if (welcomeScreen) {
-        welcomeScreen.classList.remove('hidden');
         welcomeScreen.style.display = 'flex';
+        welcomeScreen.classList.remove('hidden');
     }
-
-    // Hide main app area
     if (mainApp) {
-        mainApp.classList.add('hidden');
         mainApp.style.display = 'none';
     }
-
-    // Show sign in button, hide user section
     if (authSection) {
-        authSection.classList.remove('hidden');
         authSection.style.display = 'flex';
+        authSection.classList.remove('hidden');
     }
     if (userSection) {
-        userSection.classList.add('hidden');
         userSection.style.display = 'none';
     }
 
-    // Hide modals
     hideTreesModal();
     hideCreateTreeModal();
 
-    // Destroy app if exists
     if (app) {
         app = null;
     }
+    
+    // Make sure loading is hidden
+    hideLoading();
 }
 
 async function loadUserTrees() {
@@ -247,7 +229,6 @@ async function loadUserTrees() {
     try {
         console.log('Loading user trees...');
 
-        // Add timeout to prevent infinite loading
         const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Timeout loading trees')), 10000)
         );
@@ -262,22 +243,18 @@ async function loadUserTrees() {
         hideLoading();
 
         if (trees.length === 0) {
-            // No trees - show create tree modal
             console.log('No trees found, showing create modal');
             showCreateTreeModal();
         } else if (trees.length === 1) {
-            // Single tree - load it directly
             console.log('One tree found, loading:', trees[0].name);
             await loadTree(trees[0].id, trees[0].name);
         } else {
-            // Multiple trees - show selection modal
             console.log('Multiple trees found, showing selection');
             showTreesModal();
         }
     } catch (error) {
         console.error('Error loading trees:', error);
         hideLoading();
-        // Show create tree modal as fallback
         showCreateTreeModal();
     }
 }
@@ -289,12 +266,10 @@ async function loadTree(treeId, treeName = 'My Family Tree') {
     try {
         await firestoreFamilyService.loadFamilyTree(treeId);
 
-        // Update tree name in header
         if (currentTreeName) {
             currentTreeName.textContent = treeName;
         }
 
-        // Initialize app with Firestore service
         if (!app) {
             console.log('Creating new FamilyTreeApp instance');
             app = new FamilyTreeApp(firestoreFamilyService);

@@ -23,6 +23,7 @@ class FirestoreFamilyService {
         this.unsubscribeMembers = null;
         this.unsubscribeRelationships = null;
         this.dataChangeListeners = [];
+        this.familyTreesCache = null;
     }
 
     // Get current user's family trees collection reference
@@ -55,29 +56,58 @@ class FirestoreFamilyService {
             updatedAt: serverTimestamp()
         });
         this.currentTreeId = treeDoc.id;
+        this.familyTreesCache = null; // Invalidate cache
         await this.subscribeToTree();
         return treeDoc.id;
     }
 
     // Get all family trees for current user
     async getFamilyTrees() {
+        if (this.familyTreesCache) {
+            console.log('Returning family trees from cache.');
+            return this.familyTreesCache;
+        }
+
         try {
             const treesRef = this.getUserTreesRef();
-            // Simple query without ordering to avoid index requirement
-            const snapshot = await getDocs(treesRef);
+            // Order by creation date on the server.
+            // This requires a composite index on `createdAt` field (desc) in Firestore.
+            const q = query(treesRef, orderBy('createdAt', 'desc'));
+            const snapshot = await getDocs(q);
             const trees = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
-            // Sort client-side
-            return trees.sort((a, b) => {
-                const aTime = a.createdAt?.toMillis?.() || 0;
-                const bTime = b.createdAt?.toMillis?.() || 0;
-                return bTime - aTime;
-            });
+            
+            this.familyTreesCache = trees;
+            console.log('Fetched and cached family trees.');
+
+            return trees;
         } catch (error) {
-            console.error('Error getting family trees:', error);
-            return [];
+            console.error(
+                'Error getting family trees with server-side sorting. ' +
+                'This likely requires a Firestore index. ' +
+                'Falling back to client-side sorting. Error: ', error
+            );
+            
+            // Fallback to old method if index is missing
+            try {
+                const treesRef = this.getUserTreesRef();
+                const snapshot = await getDocs(treesRef);
+                const trees = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                // Sort client-side
+                return trees.sort((a, b) => {
+                    const aTime = a.createdAt?.toMillis?.() || 0;
+                    const bTime = b.createdAt?.toMillis?.() || 0;
+                    return bTime - aTime;
+                });
+            } catch (fallbackError) {
+                console.error('Error in fallback fetching of family trees:', fallbackError);
+                return [];
+            }
         }
     }
 
@@ -371,6 +401,7 @@ class FirestoreFamilyService {
         this.members = [];
         this.relationships = [];
         this.currentTreeId = null;
+        this.familyTreesCache = null; // Invalidate cache
         this.unsubscribe();
     }
 
