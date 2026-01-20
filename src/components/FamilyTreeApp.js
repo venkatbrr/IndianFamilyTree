@@ -117,9 +117,17 @@ class FamilyTreeApp {
 
     bindEvents() {
         // Add member button
-        document.getElementById('addMemberBtn')?.addEventListener('click', () => {
-            this.memberModal.open();
-        });
+        const addMemberBtn = document.getElementById('addMemberBtn');
+        console.log('FamilyTreeApp.bindEvents() - addMemberBtn:', addMemberBtn);
+
+        if (addMemberBtn) {
+            addMemberBtn.addEventListener('click', () => {
+                console.log('Add Member button clicked');
+                this.memberModal.open();
+            });
+        } else {
+            console.error('addMemberBtn not found in DOM');
+        }
 
         // Search input
         const searchInput = document.getElementById('searchInput');

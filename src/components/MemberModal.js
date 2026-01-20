@@ -5,7 +5,13 @@ class MemberModal {
         this.modalBody = document.getElementById('modalBody');
         this.currentMember = null;
 
-        this.bindEvents();
+        console.log('MemberModal initialized, modal element:', this.modal);
+
+        if (this.modal) {
+            this.bindEvents();
+        } else {
+            console.error('MemberModal: #memberModal element not found in DOM');
+        }
     }
 
     bindEvents() {
@@ -38,10 +44,24 @@ class MemberModal {
     }
 
     open(member = null) {
+        console.log('MemberModal.open() called');
+
+        if (!this.modal) {
+            console.error('Cannot open modal: modal element is null');
+            // Try to find it again
+            this.modal = document.getElementById('memberModal');
+            this.modalBody = document.getElementById('modalBody');
+            if (!this.modal) {
+                alert('Error: Modal element not found');
+                return;
+            }
+        }
+
         this.currentMember = member;
         this.renderForm();
         this.modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+        console.log('Modal should now be visible, classList:', this.modal.classList);
     }
 
     close() {
@@ -204,7 +224,7 @@ class MemberModal {
         });
     }
 
-    save() {
+    async save() {
         const form = document.getElementById('memberForm');
         const formData = new FormData(form);
 
@@ -235,18 +255,23 @@ class MemberModal {
             notes: formData.get('notes') || null
         };
 
-        if (this.currentMember) {
-            // Update existing member
-            this.familyService.updateMember(this.currentMember.id, memberData);
-        } else {
-            // Add new member
-            this.familyService.addMember(memberData);
+        try {
+            if (this.currentMember) {
+                // Update existing member
+                await this.familyService.updateMember(this.currentMember.id, memberData);
+            } else {
+                // Add new member
+                await this.familyService.addMember(memberData);
+            }
+
+            // Dispatch event to notify app of data change
+            window.dispatchEvent(new Event('familyDataChanged'));
+
+            this.close();
+        } catch (error) {
+            console.error('Error saving member:', error);
+            alert('Failed to save member: ' + error.message);
         }
-
-        // Dispatch event to notify app of data change
-        window.dispatchEvent(new Event('familyDataChanged'));
-
-        this.close();
     }
 }
 

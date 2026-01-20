@@ -3,11 +3,11 @@ import authService from './services/AuthService.js';
 import firestoreFamilyService from './services/FirestoreFamilyService.js';
 import './styles/main.css';
 
-// UI Elements
-let welcomeScreen;
-let mainApp;
-let authSection;
-let userSection;
+// UI Elements - Pages
+let signInPage;
+let dashboardPage;
+
+// UI Elements - Dashboard
 let userAvatar;
 let userName;
 let userEmail;
@@ -43,17 +43,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log('Auth initialization process started.');
     } catch (error) {
         console.error('Auth init error:', error);
-        // As a fallback, show the unauthenticated UI. 
+        // As a fallback, show the unauthenticated UI.
         // The auth state handler will likely have been called with null anyway.
-        showUnauthenticatedUI();
+        showSignInPage();
     }
 });
 
 function cacheElements() {
-    welcomeScreen = document.getElementById('welcomeScreen');
-    mainApp = document.getElementById('mainApp');
-    authSection = document.getElementById('authSection');
-    userSection = document.getElementById('userSection');
+    // Pages
+    signInPage = document.getElementById('signInPage');
+    dashboardPage = document.getElementById('dashboardPage');
+
+    // Dashboard elements
     userAvatar = document.getElementById('userAvatar');
     userName = document.getElementById('userName');
     userEmail = document.getElementById('userEmail');
@@ -65,8 +66,7 @@ function cacheElements() {
 }
 
 function bindAuthEvents() {
-    // Google Sign In buttons
-    document.getElementById('googleSignInBtn')?.addEventListener('click', handleSignIn);
+    // Google Sign In button (on sign-in page)
     document.getElementById('welcomeSignInBtn')?.addEventListener('click', handleSignIn);
 
     // Sign Out button
@@ -147,8 +147,8 @@ async function handleAuthStateChange(user) {
 
     if (user) {
         // User is signed in
-        console.log('User is signed in, showing authenticated UI');
-        showAuthenticatedUI(user);
+        console.log('User is signed in, showing dashboard');
+        showDashboardPage(user);
 
         // Load trees in background
         try {
@@ -159,30 +159,47 @@ async function handleAuthStateChange(user) {
         }
     } else {
         // User is signed out
-        console.log('User is signed out, showing unauthenticated UI');
-        showUnauthenticatedUI();
+        console.log('User is signed out, showing sign-in page');
+        showSignInPage();
     }
 }
 
-function showAuthenticatedUI(user) {
-    console.log('Showing authenticated UI for:', user.displayName);
+function showSignInPage() {
+    console.log('Showing sign-in page');
 
-    if (welcomeScreen) {
-        welcomeScreen.style.display = 'none';
+    // Hide dashboard, show sign-in
+    if (dashboardPage) {
+        dashboardPage.classList.add('hidden');
     }
-    if (mainApp) {
-        mainApp.style.display = 'flex';
-        mainApp.classList.remove('hidden');
-    }
-    if (authSection) {
-        authSection.style.display = 'none';
-    }
-    if (userSection) {
-        userSection.style.display = 'flex';
-        userSection.classList.remove('hidden');
+    if (signInPage) {
+        signInPage.classList.remove('hidden');
     }
 
-    // Update user info
+    // Hide any open modals
+    hideTreesModal();
+    hideCreateTreeModal();
+
+    // Reset app
+    if (app) {
+        app = null;
+    }
+
+    // Make sure loading is hidden
+    hideLoading();
+}
+
+function showDashboardPage(user) {
+    console.log('Showing dashboard for:', user.displayName);
+
+    // Hide sign-in, show dashboard
+    if (signInPage) {
+        signInPage.classList.add('hidden');
+    }
+    if (dashboardPage) {
+        dashboardPage.classList.remove('hidden');
+    }
+
+    // Update user info in header
     if (userAvatar) {
         userAvatar.src = user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || 'User');
     }
@@ -192,35 +209,6 @@ function showAuthenticatedUI(user) {
     if (userEmail) {
         userEmail.textContent = user.email;
     }
-}
-
-function showUnauthenticatedUI() {
-    console.log('Showing unauthenticated UI');
-
-    if (welcomeScreen) {
-        welcomeScreen.style.display = 'flex';
-        welcomeScreen.classList.remove('hidden');
-    }
-    if (mainApp) {
-        mainApp.style.display = 'none';
-    }
-    if (authSection) {
-        authSection.style.display = 'flex';
-        authSection.classList.remove('hidden');
-    }
-    if (userSection) {
-        userSection.style.display = 'none';
-    }
-
-    hideTreesModal();
-    hideCreateTreeModal();
-
-    if (app) {
-        app = null;
-    }
-    
-    // Make sure loading is hidden
-    hideLoading();
 }
 
 async function loadUserTrees() {
