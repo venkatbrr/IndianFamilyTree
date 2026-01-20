@@ -45,6 +45,7 @@
 
                     <!-- User Section - shown when logged in -->
                     <div id="userSection" class="user-section hidden">
+                        <span id="currentTreeName" class="current-tree-name">My Family Tree</span>
                         <button id="addMemberBtn" class="btn btn-primary">
                             <svg class="btn-icon-svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
@@ -95,6 +96,9 @@
                 </div>
             </div>
         </header>
+
+        <!-- Main App Container (hidden until logged in) -->
+        <div id="mainApp" class="hidden">
 
         <!-- Toolbar -->
         <div class="toolbar">
@@ -258,6 +262,8 @@
                 <div id="tooltip" class="tooltip"></div>
             </div>
         </main>
+
+        </div><!-- End of mainApp -->
 
         <!-- Member Details Modal -->
         <div id="memberModal" class="modal">

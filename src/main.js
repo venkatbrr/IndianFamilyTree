@@ -5,6 +5,7 @@ import './styles/main.css';
 
 // UI Elements
 let welcomeScreen;
+let mainApp;
 let authSection;
 let userSection;
 let userAvatar;
@@ -14,6 +15,7 @@ let userDropdown;
 let treesModal;
 let createTreeModal;
 let loadingOverlay;
+let currentTreeName;
 
 // App instance
 let app = null;
@@ -29,18 +31,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Show loading
     showLoading();
 
+    // Subscribe to auth state changes FIRST
+    authService.onAuthStateChange(handleAuthStateChange);
+
     // Initialize auth and wait for state
-    await authService.init();
+    try {
+        await authService.init();
+    } catch (error) {
+        console.error('Auth init error:', error);
+    }
 
     // Hide loading
     hideLoading();
-
-    // Subscribe to auth state changes
-    authService.onAuthStateChange(handleAuthStateChange);
 });
 
 function cacheElements() {
     welcomeScreen = document.getElementById('welcomeScreen');
+    mainApp = document.getElementById('mainApp');
     authSection = document.getElementById('authSection');
     userSection = document.getElementById('userSection');
     userAvatar = document.getElementById('userAvatar');
@@ -50,6 +57,7 @@ function cacheElements() {
     treesModal = document.getElementById('treesModal');
     createTreeModal = document.getElementById('createTreeModal');
     loadingOverlay = document.getElementById('loadingOverlay');
+    currentTreeName = document.getElementById('currentTreeName');
 }
 
 function bindAuthEvents() {
@@ -99,11 +107,17 @@ function bindAuthEvents() {
 
 async function handleSignIn() {
     showLoading();
-    const result = await authService.signInWithGoogle();
-    hideLoading();
-
-    if (!result.success) {
-        alert('Sign in failed: ' + result.error);
+    try {
+        const result = await authService.signInWithGoogle();
+        if (!result.success) {
+            hideLoading();
+            alert('Sign in failed: ' + result.error);
+        }
+        // Auth state change handler will take care of the rest
+    } catch (error) {
+        hideLoading();
+        console.error('Sign in error:', error);
+        alert('Sign in failed: ' + error.message);
     }
 }
 
@@ -114,11 +128,16 @@ async function handleSignOut() {
     // Clear family service data
     firestoreFamilyService.clearLocalData();
 
+    // Destroy app instance
+    app = null;
+
     await authService.signOut();
     hideLoading();
 }
 
 async function handleAuthStateChange(user) {
+    console.log('Auth state changed:', user ? user.email : 'signed out');
+
     if (user) {
         // User is signed in
         showAuthenticatedUI(user);
@@ -130,16 +149,29 @@ async function handleAuthStateChange(user) {
 }
 
 function showAuthenticatedUI(user) {
-    // Hide welcome screen
-    welcomeScreen?.classList.add('hidden');
+    console.log('Showing authenticated UI for:', user.displayName);
 
-    // Update header
-    authSection?.classList.add('hidden');
-    userSection?.classList.remove('hidden');
+    // Hide welcome screen
+    if (welcomeScreen) {
+        welcomeScreen.classList.add('hidden');
+    }
+
+    // Show main app area
+    if (mainApp) {
+        mainApp.classList.remove('hidden');
+    }
+
+    // Update header - hide sign in, show user menu
+    if (authSection) {
+        authSection.classList.add('hidden');
+    }
+    if (userSection) {
+        userSection.classList.remove('hidden');
+    }
 
     // Update user info
     if (userAvatar) {
-        userAvatar.src = user.photoURL || 'https://via.placeholder.com/32';
+        userAvatar.src = user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || 'User');
     }
     if (userName) {
         userName.textContent = user.displayName?.split(' ')[0] || 'User';
@@ -150,12 +182,29 @@ function showAuthenticatedUI(user) {
 }
 
 function showUnauthenticatedUI() {
-    // Show welcome screen
-    welcomeScreen?.classList.remove('hidden');
+    console.log('Showing unauthenticated UI');
 
-    // Update header
-    authSection?.classList.remove('hidden');
-    userSection?.classList.add('hidden');
+    // Show welcome screen
+    if (welcomeScreen) {
+        welcomeScreen.classList.remove('hidden');
+    }
+
+    // Hide main app area
+    if (mainApp) {
+        mainApp.classList.add('hidden');
+    }
+
+    // Update header - show sign in, hide user menu
+    if (authSection) {
+        authSection.classList.remove('hidden');
+    }
+    if (userSection) {
+        userSection.classList.add('hidden');
+    }
+
+    // Hide modals
+    hideTreesModal();
+    hideCreateTreeModal();
 
     // Destroy app if exists
     if (app) {
@@ -164,45 +213,64 @@ function showUnauthenticatedUI() {
 }
 
 async function loadUserTrees() {
+    showLoading();
+
     try {
+        console.log('Loading user trees...');
         const trees = await firestoreFamilyService.getFamilyTrees();
+        console.log('Found trees:', trees.length);
+
+        hideLoading();
 
         if (trees.length === 0) {
             // No trees - show create tree modal
+            console.log('No trees found, showing create modal');
             showCreateTreeModal();
         } else if (trees.length === 1) {
             // Single tree - load it directly
-            await loadTree(trees[0].id);
+            console.log('One tree found, loading:', trees[0].name);
+            await loadTree(trees[0].id, trees[0].name);
         } else {
             // Multiple trees - show selection modal
+            console.log('Multiple trees found, showing selection');
             showTreesModal();
         }
     } catch (error) {
         console.error('Error loading trees:', error);
+        hideLoading();
         // Show create tree modal as fallback
         showCreateTreeModal();
     }
 }
 
-async function loadTree(treeId) {
+async function loadTree(treeId, treeName = 'My Family Tree') {
     showLoading();
+    console.log('Loading tree:', treeId);
 
     try {
         await firestoreFamilyService.loadFamilyTree(treeId);
 
+        // Update tree name in header
+        if (currentTreeName) {
+            currentTreeName.textContent = treeName;
+        }
+
         // Initialize app with Firestore service
         if (!app) {
+            console.log('Creating new FamilyTreeApp instance');
             app = new FamilyTreeApp(firestoreFamilyService);
             app.initWithService();
         } else {
+            console.log('Refreshing existing app');
             app.render();
             app.updateStatistics();
         }
 
         hideTreesModal();
+        hideCreateTreeModal();
     } catch (error) {
         console.error('Error loading tree:', error);
-        alert('Failed to load family tree');
+        alert('Failed to load family tree: ' + error.message);
     }
 
     hideLoading();
@@ -215,16 +283,22 @@ function toggleUserDropdown() {
 function showTreesModal() {
     userDropdown?.classList.add('hidden');
     populateTreesList();
-    treesModal?.classList.remove('hidden');
+    if (treesModal) {
+        treesModal.classList.remove('hidden');
+    }
 }
 
 function hideTreesModal() {
-    treesModal?.classList.add('hidden');
+    if (treesModal) {
+        treesModal.classList.add('hidden');
+    }
 }
 
 async function populateTreesList() {
     const treesList = document.getElementById('treesList');
     if (!treesList) return;
+
+    treesList.innerHTML = '<div class="trees-loading">Loading...</div>';
 
     try {
         const trees = await firestoreFamilyService.getFamilyTrees();
@@ -236,6 +310,7 @@ async function populateTreesList() {
                         <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
                     </svg>
                     <p>No family trees yet</p>
+                    <p class="text-muted">Create your first family tree to get started</p>
                 </div>
             `;
             return;
@@ -243,7 +318,7 @@ async function populateTreesList() {
 
         treesList.innerHTML = trees.map(tree => `
             <div class="tree-item ${tree.id === firestoreFamilyService.currentTreeId ? 'active' : ''}"
-                 data-tree-id="${tree.id}">
+                 data-tree-id="${tree.id}" data-tree-name="${tree.name}">
                 <div class="tree-item-info">
                     <span class="tree-item-name">${tree.name}</span>
                     <span class="tree-item-meta">Created ${formatDate(tree.createdAt)}</span>
@@ -258,22 +333,36 @@ async function populateTreesList() {
         treesList.querySelectorAll('.tree-item').forEach(item => {
             item.addEventListener('click', () => {
                 const treeId = item.dataset.treeId;
-                loadTree(treeId);
+                const treeName = item.dataset.treeName;
+                loadTree(treeId, treeName);
             });
         });
     } catch (error) {
         console.error('Error populating trees list:', error);
+        treesList.innerHTML = `
+            <div class="trees-empty">
+                <p>Error loading trees</p>
+                <p class="text-muted">${error.message}</p>
+            </div>
+        `;
     }
 }
 
 function showCreateTreeModal() {
     hideTreesModal();
-    document.getElementById('treeName').value = '';
-    createTreeModal?.classList.remove('hidden');
+    const treeNameInput = document.getElementById('treeName');
+    if (treeNameInput) {
+        treeNameInput.value = '';
+    }
+    if (createTreeModal) {
+        createTreeModal.classList.remove('hidden');
+    }
 }
 
 function hideCreateTreeModal() {
-    createTreeModal?.classList.add('hidden');
+    if (createTreeModal) {
+        createTreeModal.classList.add('hidden');
+    }
 }
 
 async function handleCreateTree() {
@@ -284,22 +373,27 @@ async function handleCreateTree() {
     hideCreateTreeModal();
 
     try {
+        console.log('Creating tree:', treeName);
         const treeId = await firestoreFamilyService.createFamilyTree(treeName);
-        await loadTree(treeId);
+        console.log('Tree created:', treeId);
+        await loadTree(treeId, treeName);
     } catch (error) {
         console.error('Error creating tree:', error);
-        alert('Failed to create family tree');
-    } finally {
         hideLoading();
+        alert('Failed to create family tree: ' + error.message);
     }
 }
 
 function showLoading() {
-    loadingOverlay?.classList.remove('hidden');
+    if (loadingOverlay) {
+        loadingOverlay.classList.remove('hidden');
+    }
 }
 
 function hideLoading() {
-    loadingOverlay?.classList.add('hidden');
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('hidden');
+    }
 }
 
 function formatDate(timestamp) {

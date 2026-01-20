@@ -969,11 +969,25 @@ body {
 .user-section {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-4);
 }
 
 .user-section.hidden {
     display: none;
+}
+
+/* Current Tree Name */
+.current-tree-name {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: var(--font-weight-medium);
+    font-size: 0.875rem;
+    padding: var(--space-2) var(--space-3);
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* User Menu */
@@ -1235,6 +1249,27 @@ body {
     height: 48px;
     margin-bottom: var(--space-3);
     color: var(--color-text-tertiary);
+}
+
+.trees-empty .text-muted {
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    margin-top: var(--space-2);
+}
+
+.trees-loading {
+    text-align: center;
+    padding: var(--space-8);
+    color: var(--color-text-secondary);
+}
+
+/* Main App Container */
+#mainApp {
+    display: contents;
+}
+
+#mainApp.hidden {
+    display: none;
 }
 
 .btn-full {
