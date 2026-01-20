@@ -22,27 +22,32 @@ let app = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM loaded, initializing app...');
+
     // Cache DOM elements
     cacheElements();
 
     // Bind auth event listeners
     bindAuthEvents();
 
-    // Show loading
-    showLoading();
-
-    // Subscribe to auth state changes FIRST
+    // Subscribe to auth state changes
     authService.onAuthStateChange(handleAuthStateChange);
 
-    // Initialize auth and wait for state
+    // Initialize auth - this will trigger handleAuthStateChange
     try {
-        await authService.init();
+        console.log('Initializing auth service...');
+        const user = await authService.init();
+        console.log('Auth initialized, user:', user ? user.email : 'none');
+
+        // If no user after init, make sure we show unauthenticated UI
+        if (!user) {
+            console.log('No user found, showing welcome screen');
+            showUnauthenticatedUI();
+        }
     } catch (error) {
         console.error('Auth init error:', error);
+        showUnauthenticatedUI();
     }
-
-    // Hide loading
-    hideLoading();
 });
 
 function cacheElements() {
@@ -136,14 +141,27 @@ async function handleSignOut() {
 }
 
 async function handleAuthStateChange(user) {
-    console.log('Auth state changed:', user ? user.email : 'signed out');
+    console.log('handleAuthStateChange called:', user ? user.email : 'signed out');
+
+    // Always hide loading first
+    hideLoading();
 
     if (user) {
         // User is signed in
+        console.log('User is signed in, showing authenticated UI');
         showAuthenticatedUI(user);
-        await loadUserTrees();
+
+        // Load trees in background
+        try {
+            await loadUserTrees();
+        } catch (error) {
+            console.error('Error in loadUserTrees:', error);
+            // Still show the create tree modal as fallback
+            showCreateTreeModal();
+        }
     } else {
         // User is signed out
+        console.log('User is signed out, showing unauthenticated UI');
         showUnauthenticatedUI();
     }
 }
@@ -154,6 +172,7 @@ function showAuthenticatedUI(user) {
     // Hide welcome screen
     if (welcomeScreen) {
         welcomeScreen.classList.add('hidden');
+        welcomeScreen.style.display = 'none';
     }
 
     // Show main app area
@@ -164,9 +183,15 @@ function showAuthenticatedUI(user) {
     // Update header - hide sign in, show user menu
     if (authSection) {
         authSection.classList.add('hidden');
+        authSection.style.display = 'none';
+        console.log('Auth section hidden');
+    } else {
+        console.warn('authSection not found!');
     }
     if (userSection) {
         userSection.classList.remove('hidden');
+        userSection.style.display = 'flex';
+        console.log('User section shown');
     }
 
     // Update user info
@@ -187,19 +212,23 @@ function showUnauthenticatedUI() {
     // Show welcome screen
     if (welcomeScreen) {
         welcomeScreen.classList.remove('hidden');
+        welcomeScreen.style.display = 'flex';
     }
 
     // Hide main app area
     if (mainApp) {
         mainApp.classList.add('hidden');
+        mainApp.style.display = 'none';
     }
 
-    // Update header - show sign in, hide user menu
+    // Show sign in button, hide user section
     if (authSection) {
         authSection.classList.remove('hidden');
+        authSection.style.display = 'flex';
     }
     if (userSection) {
         userSection.classList.add('hidden');
+        userSection.style.display = 'none';
     }
 
     // Hide modals

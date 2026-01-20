@@ -760,7 +760,7 @@ body {
     justify-content: center;
     align-items: center;
     gap: var(--space-4);
-    z-index: 9999;
+    z-index: 1500;
 }
 
 .loading-overlay.hidden {
@@ -963,6 +963,10 @@ body {
 .auth-section {
     display: flex;
     align-items: center;
+}
+
+.auth-section.hidden {
+    display: none !important;
 }
 
 /* User Section */

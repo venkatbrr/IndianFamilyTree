@@ -16,6 +16,7 @@ class AuthService {
     init() {
         return new Promise((resolve) => {
             onAuthStateChanged(auth, async (user) => {
+                console.log('Auth state changed in service:', user ? user.email : 'no user');
                 if (user) {
                     this.currentUser = {
                         uid: user.uid,
@@ -23,8 +24,10 @@ class AuthService {
                         displayName: user.displayName,
                         photoURL: user.photoURL
                     };
-                    // Create or update user document in Firestore
-                    await this.createUserDocument(user);
+                    // Create or update user document in Firestore (don't block on this)
+                    this.createUserDocument(user).catch(err => {
+                        console.warn('Could not create user document:', err);
+                    });
                 } else {
                     this.currentUser = null;
                 }
