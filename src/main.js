@@ -289,6 +289,7 @@ async function handleCreateTree() {
     } catch (error) {
         console.error('Error creating tree:', error);
         alert('Failed to create family tree');
+    } finally {
         hideLoading();
     }
 }
