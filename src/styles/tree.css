@@ -655,6 +655,26 @@
     stroke-width: 4;
 }
 
+/* Blur effect for non-selected tiles when adding member */
+.tree-node.blurred {
+    opacity: 0.3;
+    filter: blur(2px) grayscale(50%);
+    pointer-events: none;
+}
+
+/* Highlight selected tile when adding member */
+.tree-node.selected-for-add {
+    opacity: 1 !important;
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
+.tree-node.selected-for-add rect {
+    stroke: #10b981;
+    stroke-width: 4;
+    filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.6));
+}
+
 /* ========================================
    ACCESSIBILITY
 ======================================== */

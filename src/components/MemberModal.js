@@ -483,11 +483,18 @@ class MemberModal {
         const formData = new FormData(form);
 
         // Validate required fields
-        const firstName = formData.get('firstName');
+        const firstName = formData.get('firstName')?.trim();
+        const lastName = formData.get('lastName')?.trim();
         const gender = formData.get('gender');
 
-        if (!firstName || !gender) {
-            alert('Please fill in all required fields (First Name and Gender)');
+        if (!firstName) {
+            alert('First Name is required');
+            document.getElementById('memberForm').querySelector('[name="firstName"]')?.focus();
+            return;
+        }
+
+        if (!gender) {
+            alert('Gender is required');
             return;
         }
 

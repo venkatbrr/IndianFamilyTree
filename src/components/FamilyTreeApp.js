@@ -25,7 +25,7 @@ class FamilyTreeApp {
         // Initial render
         this.render();
 
-        // Update statistics
+        // Update statistics (without recent members)
         this.updateStatistics();
     }
 
@@ -46,7 +46,7 @@ class FamilyTreeApp {
         // Initial render
         this.render();
 
-        // Update statistics
+        // Update statistics (without recent members)
         this.updateStatistics();
     }
 
@@ -204,63 +204,20 @@ class FamilyTreeApp {
             this.updateStatistics();
         });
 
-        // Listen for add member event from tree node "+" button
-        window.addEventListener('openAddMemberModal', () => {
-            console.log('🔵 openAddMemberModal event received - showing relationship selector');
-            this.showRelationshipSelector();
-        });
+        // Listen for add member with relation event from tree suggestion tiles
+        window.addEventListener('addMemberWithRelation', (e) => {
+            const { relationship, gender, referenceMemberId } = e.detail;
+            console.log('🔵 addMemberWithRelation event received:', relationship, gender, referenceMemberId);
 
-        // Setup relationship selector modal
-        this.setupRelationshipSelector();
-    }
-
-    showRelationshipSelector() {
-        const modal = document.getElementById('addRelationshipModal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    hideRelationshipSelector() {
-        const modal = document.getElementById('addRelationshipModal');
-        if (modal) {
-            modal.classList.remove('active');
-            modal.classList.add('hidden');
-            document.body.style.overflow = '';
-        }
-    }
-
-    setupRelationshipSelector() {
-        const modal = document.getElementById('addRelationshipModal');
-        if (!modal) return;
-
-        // Close button
-        document.getElementById('closeRelationshipModal')?.addEventListener('click', () => {
-            this.hideRelationshipSelector();
-        });
-
-        // Close on backdrop click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                this.hideRelationshipSelector();
+            // Clear suggestions from the tree
+            if (this.treeRenderer) {
+                this.treeRenderer.clearSuggestions();
             }
-        });
 
-        // Relationship buttons
-        modal.querySelectorAll('.relationship-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const relationship = btn.dataset.relationship;
-                const gender = btn.dataset.gender;
-
-                this.hideRelationshipSelector();
-
-                // Open member modal with pre-selected relationship and gender
-                if (this.memberModal) {
-                    this.memberModal.openWithRelationship(relationship, gender);
-                }
-            });
+            // Open member modal with pre-selected relationship and gender
+            if (this.memberModal) {
+                this.memberModal.openWithRelationship(relationship, gender, referenceMemberId);
+            }
         });
     }
 
@@ -308,23 +265,8 @@ class FamilyTreeApp {
         document.getElementById('totalMales').textContent = stats.males;
         document.getElementById('totalFemales').textContent = stats.females;
 
-        // Update recent members
-        this.updateRecentMembers();
-
         // Update upcoming events
         this.updateUpcomingEvents();
-    }
-
-    updateRecentMembers() {
-        const container = document.getElementById('recentMembers');
-        const recentMembers = this.familyService.getRecentMembers(5);
-
-        container.innerHTML = recentMembers.map(member => `
-            <div class="recent-item">
-                <span class="member-icon">${member.gender === 'male' ? '👨' : '👩'}</span>
-                <span class="member-name">${member.name}</span>
-            </div>
-        `).join('');
     }
 
     updateUpcomingEvents() {
