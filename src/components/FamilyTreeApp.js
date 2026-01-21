@@ -9,7 +9,6 @@ class FamilyTreeApp {
         this.familyService = familyService || new FamilyTreeService();
         this.treeRenderer = null;
         this.memberModal = null;
-        this.currentZoom = 1;
         this.currentView = 'tree';
     }
 
@@ -56,8 +55,12 @@ class FamilyTreeApp {
 
         // Generation 1: Grandparents
         const grandfather = this.familyService.addMember({
+            firstName: 'Ramchandra',
+            lastName: 'Sharma',
             name: 'Shri Ramchandra Sharma',
             gender: 'male',
+            relationship: 'Grandfather',
+            age: 74,
             birthDate: '1950-01-15',
             birthPlace: 'Varanasi, Uttar Pradesh',
             gotra: 'Bharadwaj',
@@ -66,8 +69,12 @@ class FamilyTreeApp {
         });
 
         const grandmother = this.familyService.addMember({
+            firstName: 'Lakshmi',
+            lastName: 'Devi',
             name: 'Smt. Lakshmi Devi',
             gender: 'female',
+            relationship: 'Grandmother',
+            age: 69,
             birthDate: '1955-03-10',
             birthPlace: 'Allahabad, Uttar Pradesh',
             profession: 'Homemaker',
@@ -78,8 +85,12 @@ class FamilyTreeApp {
 
         // Generation 2: Parents
         const father = this.familyService.addMember({
+            firstName: 'Rajesh',
+            lastName: 'Sharma',
             name: 'Rajesh Sharma',
             gender: 'male',
+            relationship: 'Father',
+            age: 46,
             birthDate: '1978-08-20',
             birthPlace: 'Delhi, India',
             gotra: 'Bharadwaj',
@@ -90,8 +101,12 @@ class FamilyTreeApp {
         });
 
         const mother = this.familyService.addMember({
+            firstName: 'Priya',
+            lastName: 'Sharma',
             name: 'Priya Sharma',
             gender: 'female',
+            relationship: 'Mother',
+            age: 44,
             birthDate: '1980-02-14',
             birthPlace: 'Mumbai, Maharashtra',
             profession: 'Doctor',
@@ -103,8 +118,12 @@ class FamilyTreeApp {
 
         // Generation 3: Child
         this.familyService.addMember({
+            firstName: 'Arjun',
+            lastName: 'Sharma',
             name: 'Arjun Sharma',
             gender: 'male',
+            relationship: 'Son',
+            age: 16,
             birthDate: '2008-06-15',
             birthPlace: 'Bangalore, Karnataka',
             gotra: 'Bharadwaj',
@@ -121,12 +140,17 @@ class FamilyTreeApp {
         console.log('FamilyTreeApp.bindEvents() - addMemberBtn:', addMemberBtn);
 
         if (addMemberBtn) {
+            console.log('✓ Add Member button found, binding click event');
             addMemberBtn.addEventListener('click', () => {
-                console.log('Add Member button clicked');
-                this.memberModal.open();
+                console.log('🔵 Add Member button clicked - opening modal');
+                if (this.memberModal) {
+                    this.memberModal.open();
+                } else {
+                    console.error('❌ memberModal is not initialized');
+                }
             });
         } else {
-            console.error('addMemberBtn not found in DOM');
+            console.error('❌ addMemberBtn not found in DOM');
         }
 
         // Search input
@@ -151,18 +175,17 @@ class FamilyTreeApp {
 
         // Zoom controls
         document.getElementById('zoomInBtn')?.addEventListener('click', () => {
-            this.currentZoom *= 1.2;
-            this.treeRenderer.setZoom(this.currentZoom);
+            const newScale = (this.treeRenderer.currentScale || 1) * 1.2;
+            this.treeRenderer.setZoom(Math.min(newScale, 4)); // max 4x
         });
 
         document.getElementById('zoomOutBtn')?.addEventListener('click', () => {
-            this.currentZoom /= 1.2;
-            this.treeRenderer.setZoom(this.currentZoom);
+            const newScale = (this.treeRenderer.currentScale || 1) / 1.2;
+            this.treeRenderer.setZoom(Math.max(newScale, 0.1)); // min 0.1x
         });
 
         document.getElementById('resetZoomBtn')?.addEventListener('click', () => {
-            this.currentZoom = 1;
-            this.treeRenderer.setZoom(this.currentZoom);
+            this.treeRenderer.resetZoom();
         });
 
         // Export button
@@ -179,6 +202,65 @@ class FamilyTreeApp {
         window.addEventListener('familyDataChanged', () => {
             this.render();
             this.updateStatistics();
+        });
+
+        // Listen for add member event from tree node "+" button
+        window.addEventListener('openAddMemberModal', () => {
+            console.log('🔵 openAddMemberModal event received - showing relationship selector');
+            this.showRelationshipSelector();
+        });
+
+        // Setup relationship selector modal
+        this.setupRelationshipSelector();
+    }
+
+    showRelationshipSelector() {
+        const modal = document.getElementById('addRelationshipModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    hideRelationshipSelector() {
+        const modal = document.getElementById('addRelationshipModal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    }
+
+    setupRelationshipSelector() {
+        const modal = document.getElementById('addRelationshipModal');
+        if (!modal) return;
+
+        // Close button
+        document.getElementById('closeRelationshipModal')?.addEventListener('click', () => {
+            this.hideRelationshipSelector();
+        });
+
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.hideRelationshipSelector();
+            }
+        });
+
+        // Relationship buttons
+        modal.querySelectorAll('.relationship-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const relationship = btn.dataset.relationship;
+                const gender = btn.dataset.gender;
+
+                this.hideRelationshipSelector();
+
+                // Open member modal with pre-selected relationship and gender
+                if (this.memberModal) {
+                    this.memberModal.openWithRelationship(relationship, gender);
+                }
+            });
         });
     }
 

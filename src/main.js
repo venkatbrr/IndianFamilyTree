@@ -231,11 +231,14 @@ async function loadUserTrees() {
         hideLoading();
 
         if (trees.length === 0) {
-            console.log('No trees found, showing create modal');
-            showCreateTreeModal();
+            console.log('No trees found, auto-creating default tree');
+            // Auto-create a default tree for the user instead of showing modal
+            await autoCreateDefaultTree();
         } else if (trees.length === 1) {
             console.log('One tree found, loading:', trees[0].name);
             await loadTree(trees[0].id, trees[0].name);
+            // Ensure button is enabled after loading
+            enableAddMemberButton();
         } else {
             console.log('Multiple trees found, showing selection');
             showTreesModal();
@@ -243,6 +246,51 @@ async function loadUserTrees() {
     } catch (error) {
         console.error('Error loading trees:', error);
         hideLoading();
+        disableAddMemberButton();
+        showCreateTreeModal();
+    }
+}
+
+async function autoCreateDefaultTree() {
+    showLoading();
+
+    try {
+        const user = authService.getCurrentUser();
+        const treeName = user?.displayName ? `${user.displayName}'s Family Tree` : 'My Family Tree';
+
+        console.log('Auto-creating tree:', treeName);
+        const treeId = await firestoreFamilyService.createFamilyTree(treeName);
+        console.log('Tree created:', treeId);
+        await loadTree(treeId, treeName);
+
+        // Auto-create the user's own tile as the first member
+        if (user) {
+            const nameParts = (user.displayName || 'User').split(' ');
+            const firstName = nameParts[0] || 'User';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            const memberData = {
+                firstName: firstName,
+                lastName: lastName,
+                name: user.displayName || 'User',
+                gender: 'male', // Default, user can edit later
+                relationship: 'Self',
+                photoURL: user.photoURL || null,
+                email: user.email || null,
+                isAlive: true,
+                isCurrentUser: true // Mark this as the current user's tile
+            };
+
+            await firestoreFamilyService.addMember(memberData);
+            console.log('Auto-created user tile for:', user.displayName);
+        }
+
+        enableAddMemberButton();
+        hideLoading();
+    } catch (error) {
+        console.error('Error auto-creating tree:', error);
+        hideLoading();
+        // Fall back to showing the create modal if auto-create fails
         showCreateTreeModal();
     }
 }
@@ -268,6 +316,7 @@ async function loadTree(treeId, treeName = 'My Family Tree') {
             app.updateStatistics();
         }
 
+        enableAddMemberButton();
         hideTreesModal();
         hideCreateTreeModal();
     } catch (error) {
@@ -287,12 +336,16 @@ function showTreesModal() {
     populateTreesList();
     if (treesModal) {
         treesModal.classList.remove('hidden');
+        treesModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 }
 
 function hideTreesModal() {
     if (treesModal) {
+        treesModal.classList.remove('active');
         treesModal.classList.add('hidden');
+        document.body.style.overflow = '';
     }
 }
 
@@ -358,12 +411,16 @@ function showCreateTreeModal() {
     }
     if (createTreeModal) {
         createTreeModal.classList.remove('hidden');
+        createTreeModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
 }
 
 function hideCreateTreeModal() {
     if (createTreeModal) {
+        createTreeModal.classList.remove('active');
         createTreeModal.classList.add('hidden');
+        document.body.style.overflow = '';
     }
 }
 
@@ -379,6 +436,11 @@ async function handleCreateTree() {
         const treeId = await firestoreFamilyService.createFamilyTree(treeName);
         console.log('Tree created:', treeId);
         await loadTree(treeId, treeName);
+
+        // Ensure button is enabled after tree creation
+        enableAddMemberButton();
+        console.log('Add Member button should now be enabled');
+        hideLoading();
     } catch (error) {
         console.error('Error creating tree:', error);
         hideLoading();
@@ -407,4 +469,24 @@ function formatDate(timestamp) {
         month: 'short',
         year: 'numeric'
     });
+}
+
+function disableAddMemberButton() {
+    const addMemberBtn = document.getElementById('addMemberBtn');
+    if (addMemberBtn) {
+        addMemberBtn.disabled = true;
+        addMemberBtn.style.opacity = '0.5';
+        addMemberBtn.style.cursor = 'not-allowed';
+        addMemberBtn.title = 'Please create a family tree first';
+    }
+}
+
+function enableAddMemberButton() {
+    const addMemberBtn = document.getElementById('addMemberBtn');
+    if (addMemberBtn) {
+        addMemberBtn.disabled = false;
+        addMemberBtn.style.opacity = '1';
+        addMemberBtn.style.cursor = 'pointer';
+        addMemberBtn.title = 'Add a new family member';
+    }
 }

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Large Family Tree - 150 Members</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .test-btn {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .test-btn:hover {
+            background: #4f46e5;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Large Family Tree Test</h1>
+
+        <div class="info">
+            <h3>Test Configuration:</h3>
+            <ul>
+                <li><strong>Total Members:</strong> 150+</li>
+                <li><strong>Generations:</strong> 3</li>
+                <li><strong>Structure:</strong> Multiple family branches with spouses and children</li>
+            </ul>
+        </div>
+
+        <div>
+            <button class="test-btn" onclick="generateLargeFamily()">Generate Large Family</button>
+            <button class="test-btn" onclick="testMobileView()">Test Mobile View</button>
+            <button class="test-btn" onclick="testConnections()">Test Connections</button>
+            <button class="test-btn" onclick="clearTests()">Clear</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import FamilyTreeService from './src/services/FamilyTreeService.js';
+
+        window.familyService = new FamilyTreeService();
+        let testResults = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            testResults.push(`[${timestamp}] ${prefix} ${message}`);
+            updateResults();
+        }
+
+        function updateResults() {
+            document.getElementById('results').textContent = testResults.join('\n');
+        }
+
+        window.clearTests = function() {
+            testResults = [];
+            window.familyService.clearAllData();
+            updateResults();
+            log('Tests cleared');
+        }
+
+        window.generateLargeFamily = function() {
+            log('Starting large family generation...');
+            window.familyService.clearAllData();
+
+            try {
+                // Generation 1: 10 couples (20 people)
+                const gen1Couples = [];
+                for (let i = 0; i < 10; i++) {
+                    const husband = window.familyService.addMember({
+                        firstName: `Husband${i+1}`,
+                        lastName: 'Sharma',
+                        gender: 'male',
+                        age: 70 + i,
+                        birthDate: `${1950 + i}-01-15`,
+                        relationship: 'Grandfather',
+                        isAlive: true
+                    });
+
+                    const wife = window.familyService.addMember({
+                        firstName: `Wife${i+1}`,
+                        lastName: 'Devi',
+                        gender: 'female',
+                        age: 68 + i,
+                        birthDate: `${1952 + i}-03-10`,
+                        relationship: 'Grandmother',
+                        isAlive: true
+                    });
+
+                    window.familyService.addSpouse(husband.id, wife.id, `${1970 + i}-05-12`);
+                    gen1Couples.push({ husband, wife });
+                }
+                log(`Generation 1: Created ${gen1Couples.length} couples (${gen1Couples.length * 2} members)`, 'success');
+
+                // Generation 2: Each Gen1 couple has 5 children (50 people)
+                const gen2Members = [];
+                gen1Couples.forEach((couple, coupleIdx) => {
+                    for (let i = 0; i < 5; i++) {
+                        const child = window.familyService.addMember({
+                            firstName: `Child${coupleIdx+1}_${i+1}`,
+                            lastName: 'Sharma',
+                            gender: i % 2 === 0 ? 'male' : 'female',
+                            age: 45 + i,
+                            birthDate: `${1975 + coupleIdx}-0${i+1}-20`,
+                            relationship: i % 2 === 0 ? 'Father' : 'Mother',
+                            parentIds: [couple.husband.id, couple.wife.id],
+                            isAlive: true
+                        });
+                        gen2Members.push(child);
+                    }
+                });
+                log(`Generation 2: Created ${gen2Members.length} children`, 'success');
+
+                // Add spouses to Gen2 members (25 couples = 50 people total in Gen2)
+                const gen2Couples = [];
+                for (let i = 0; i < gen2Members.length; i += 2) {
+                    if (i + 1 < gen2Members.length) {
+                        const member1 = gen2Members[i];
+                        const member2 = gen2Members[i + 1];
+
+                        // Only add spouse if they're different genders
+                        if (member1.gender !== member2.gender) {
+                            window.familyService.addSpouse(member1.id, member2.id, `${2000 + i}-06-15`);
+                            gen2Couples.push({
+                                parent1: member1,
+                                parent2: member2
+                            });
+                        }
+                    }
+                }
+                log(`Generation 2: Created ${gen2Couples.length} couples with spouses`, 'success');
+
+                // Generation 3: Each Gen2 couple has 4 children (100 people)
+                let gen3Count = 0;
+                gen2Couples.forEach((couple, coupleIdx) => {
+                    for (let i = 0; i < 4; i++) {
+                        window.familyService.addMember({
+                            firstName: `Grandchild${coupleIdx+1}_${i+1}`,
+                            lastName: 'Sharma',
+                            gender: i % 2 === 0 ? 'male' : 'female',
+                            age: 15 + i,
+                            birthDate: `${2005 + i}-0${(i%9)+1}-10`,
+                            relationship: i % 2 === 0 ? 'Son' : 'Daughter',
+                            parentIds: [couple.parent1.id, couple.parent2.id],
+                            isAlive: true
+                        });
+                        gen3Count++;
+                    }
+                });
+                log(`Generation 3: Created ${gen3Count} grandchildren`, 'success');
+
+                // Get statistics
+                const stats = window.familyService.getStatistics();
+                log(`\n📊 FINAL STATISTICS:`, 'success');
+                log(`   Total Members: ${stats.totalMembers}`);
+                log(`   Generations: ${stats.generations}`);
+                log(`   Males: ${stats.males}`);
+                log(`   Females: ${stats.females}`);
+                log(`\n✅ Large family generated successfully!`, 'success');
+
+                if (stats.totalMembers >= 150) {
+                    log(`🎉 SUCCESS: Generated ${stats.totalMembers} members (target: 150+)`, 'success');
+                } else {
+                    log(`⚠️  WARNING: Only ${stats.totalMembers} members generated (target: 150)`, 'error');
+                }
+
+            } catch (error) {
+                log(`Error generating family: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        window.testMobileView = function() {
+            log('Testing mobile viewport simulation...');
+
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            log(`Current viewport: ${viewportWidth}x${viewportHeight}`);
+
+            if (viewportWidth < 768) {
+                log('✅ Mobile viewport detected', 'success');
+                log('   - Sidebar should be visible with stats in one row');
+                log('   - Tree should be scrollable');
+                log('   - Touch gestures should work');
+            } else if (viewportWidth < 1024) {
+                log('✅ Tablet viewport detected', 'success');
+            } else {
+                log('ℹ️  Desktop viewport detected');
+                log('   To test mobile: Resize browser or use DevTools device emulation');
+            }
+        }
+
+        window.testConnections = function() {
+            log('Testing family connections...');
+
+            const members = window.familyService.getAllMembers();
+            if (members.length === 0) {
+                log('⚠️  No members found. Generate family first!', 'error');
+                return;
+            }
+
+            let connectionsCount = 0;
+            let spouseConnections = 0;
+            let parentChildConnections = 0;
+
+            members.forEach(member => {
+                // Count parent-child connections
+                if (member.parentIds && member.parentIds.length > 0) {
+                    parentChildConnections += member.parentIds.length;
+                    connectionsCount++;
+                }
+
+                // Count spouse connections
+                if (member.spouseId) {
+                    spouseConnections++;
+                }
+            });
+
+            log(`\n🔗 CONNECTION ANALYSIS:`);
+            log(`   Members with parents: ${connectionsCount}`);
+            log(`   Parent-child links: ${parentChildConnections}`);
+            log(`   Spouse connections: ${spouseConnections / 2} couples`);
+            log(`   Total connection points: ${parentChildConnections + spouseConnections}`);
+
+            if (parentChildConnections > 0) {
+                log(`✅ Connections found! Lines should be visible in tree`, 'success');
+            } else {
+                log(`❌ No connections found!`, 'error');
+            }
+        }
+
+        // Auto-run info on load
+        log('Large Family Tree Test Suite Ready');
+        log('Click "Generate Large Family" to start testing');
+    </script>
+</body>
+</html>

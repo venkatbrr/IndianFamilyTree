@@ -12,7 +12,8 @@ import {
     serverTimestamp,
     onSnapshot
 } from 'firebase/firestore';
-import { db } from '../config/firebase.js';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { db, storage } from '../config/firebase.js';
 import authService from './AuthService.js';
 
 class FirestoreFamilyService {
@@ -159,6 +160,34 @@ class FirestoreFamilyService {
         }
     }
 
+    // Upload photo to Firebase Storage
+    async uploadPhoto(file, memberId) {
+        if (!file) return null;
+
+        const user = authService.getCurrentUser();
+        if (!user || !this.currentTreeId) throw new Error('User not authenticated or no tree selected');
+
+        const fileName = `${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, `users/${user.uid}/familyTrees/${this.currentTreeId}/photos/${memberId}/${fileName}`);
+
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        return downloadURL;
+    }
+
+    // Delete photo from Firebase Storage
+    async deletePhoto(photoURL) {
+        if (!photoURL) return;
+
+        try {
+            const photoRef = ref(storage, photoURL);
+            await deleteObject(photoRef);
+        } catch (error) {
+            console.error('Error deleting photo:', error);
+        }
+    }
+
     // Member Management
     async addMember(memberData) {
         const membersRef = this.getMembersRef();
@@ -287,12 +316,22 @@ class FirestoreFamilyService {
     // Search and Filter
     searchMembers(query) {
         const lowerQuery = query.toLowerCase();
-        return this.members.filter(member =>
-            member.name.toLowerCase().includes(lowerQuery) ||
-            (member.profession && member.profession.toLowerCase().includes(lowerQuery)) ||
-            (member.birthPlace && member.birthPlace.toLowerCase().includes(lowerQuery)) ||
-            (member.gotra && member.gotra.toLowerCase().includes(lowerQuery))
-        );
+        return this.members.filter(member => {
+            // Search in name (both old format and new firstName/lastName)
+            const nameMatch = (member.name && member.name.toLowerCase().includes(lowerQuery)) ||
+                (member.firstName && member.firstName.toLowerCase().includes(lowerQuery)) ||
+                (member.lastName && member.lastName.toLowerCase().includes(lowerQuery));
+
+            // Search in other fields
+            const otherMatch =
+                (member.profession && member.profession.toLowerCase().includes(lowerQuery)) ||
+                (member.birthPlace && member.birthPlace.toLowerCase().includes(lowerQuery)) ||
+                (member.gotra && member.gotra.toLowerCase().includes(lowerQuery)) ||
+                (member.email && member.email.toLowerCase().includes(lowerQuery)) ||
+                (member.phone && member.phone.toLowerCase().includes(lowerQuery));
+
+            return nameMatch || otherMatch;
+        });
     }
 
     getMembersByGeneration(generation) {

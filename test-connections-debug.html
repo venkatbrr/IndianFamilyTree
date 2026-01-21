@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Lines Debug Test</title>
+    <link rel="stylesheet" href="/src/styles/main.css">
+    <link rel="stylesheet" href="/src/styles/tree.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #tree-container {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #ccc;
+            background: white;
+            position: relative;
+        }
+        #info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .debug-log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔗 Connection Lines Debug Test</h1>
+
+    <div id="info">
+        <p><strong>This test will:</strong></p>
+        <ul>
+            <li>Create a 3-generation family (Grandparents → Parents → Child)</li>
+            <li>Render the family tree</li>
+            <li>Show debug info about connections</li>
+            <li>Verify connecting lines are visible</li>
+        </ul>
+        <button onclick="runTest()">Run Test</button>
+        <button onclick="inspect()">Inspect Links</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div id="tree-container">
+        <svg id="familyTree" width="100%" height="100%"></svg>
+    </div>
+
+    <div class="debug-log" id="debugLog">
+        Console output will appear here...
+    </div>
+
+    <script type="module">
+        import FamilyTreeService from './src/services/FamilyTreeService.js';
+        import TreeRenderer from './src/components/TreeRenderer.js';
+
+        window.familyService = new FamilyTreeService();
+        window.treeRenderer = null;
+
+        const debugLog = [];
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            const logMessage = `[${timestamp}] ${prefix} ${message}`;
+            debugLog.push(logMessage);
+            console.log(logMessage);
+            updateDebugLog();
+        }
+
+        function updateDebugLog() {
+            document.getElementById('debugLog').innerHTML = debugLog.join('<br>');
+        }
+
+        window.clearLog = function() {
+            debugLog.length = 0;
+            updateDebugLog();
+        }
+
+        window.runTest = function() {
+            addLog('=== STARTING CONNECTION TEST ===', 'info');
+            window.familyService.clearAllData();
+
+            addLog('Creating 3-generation family...', 'info');
+
+            // Generation 1: Grandparents
+            const grandfather = window.familyService.addMember({
+                firstName: 'Ramchandra',
+                lastName: 'Sharma',
+                name: 'Shri Ramchandra Sharma',
+                gender: 'male',
+                relationship: 'Grandfather',
+                age: 74,
+                birthDate: '1950-01-15',
+                isAlive: true
+            });
+            addLog(`Created: ${grandfather.name}`, 'success');
+
+            const grandmother = window.familyService.addMember({
+                firstName: 'Lakshmi',
+                lastName: 'Devi',
+                name: 'Smt. Lakshmi Devi',
+                gender: 'female',
+                relationship: 'Grandmother',
+                age: 69,
+                birthDate: '1955-03-10',
+                isAlive: true
+            });
+            addLog(`Created: ${grandmother.name}`, 'success');
+
+            window.familyService.addSpouse(grandfather.id, grandmother.id, '1975-05-12');
+            addLog(`Linked as spouses: ${grandfather.name} ↔ ${grandmother.name}`, 'success');
+
+            // Generation 2: Parents
+            const father = window.familyService.addMember({
+                firstName: 'Rajesh',
+                lastName: 'Sharma',
+                name: 'Rajesh Sharma',
+                gender: 'male',
+                relationship: 'Father',
+                age: 46,
+                birthDate: '1978-08-20',
+                isAlive: true,
+                parentIds: [grandfather.id, grandmother.id]
+            });
+            addLog(`Created: ${father.name} (parents: ${grandfather.name}, ${grandmother.name})`, 'success');
+
+            const mother = window.familyService.addMember({
+                firstName: 'Priya',
+                lastName: 'Sharma',
+                name: 'Priya Sharma',
+                gender: 'female',
+                relationship: 'Mother',
+                age: 44,
+                birthDate: '1980-02-14',
+                isAlive: true
+            });
+            addLog(`Created: ${mother.name}`, 'success');
+
+            window.familyService.addSpouse(father.id, mother.id, '2005-12-10');
+            addLog(`Linked as spouses: ${father.name} ↔ ${mother.name}`, 'success');
+
+            // Generation 3: Child
+            const child = window.familyService.addMember({
+                firstName: 'Arjun',
+                lastName: 'Sharma',
+                name: 'Arjun Sharma',
+                gender: 'male',
+                relationship: 'Son',
+                age: 16,
+                birthDate: '2008-06-15',
+                isAlive: true,
+                parentIds: [father.id, mother.id]
+            });
+            addLog(`Created: ${child.name} (parents: ${father.name}, ${mother.name})`, 'success');
+
+            const allMembers = window.familyService.getAllMembers();
+            addLog(`\nTotal members created: ${allMembers.length}`, 'info');
+
+            // Analyze connections
+            const membersWithParents = allMembers.filter(m => m.parentIds && m.parentIds.length > 0);
+            const membersWithSpouses = allMembers.filter(m => m.spouseId);
+
+            addLog(`Members with parents: ${membersWithParents.length}`, 'info');
+            membersWithParents.forEach(m => {
+                const parents = m.parentIds.map(pid => {
+                    const p = allMembers.find(member => member.id === pid);
+                    return p ? p.name || p.firstName : pid;
+                });
+                addLog(`  - ${m.name || m.firstName} → parents: [${parents.join(', ')}]`, 'info');
+            });
+
+            addLog(`Members with spouses: ${membersWithSpouses.length}`, 'info');
+
+            // Render tree
+            addLog('\nRendering tree...', 'info');
+            if (!window.treeRenderer) {
+                window.treeRenderer = new TreeRenderer('#familyTree', window.familyService);
+            }
+            window.treeRenderer.renderTree(allMembers);
+
+            // Wait a bit for rendering, then check
+            setTimeout(() => {
+                window.inspect();
+            }, 1000);
+        }
+
+        window.inspect = function() {
+            addLog('\n=== INSPECTING SVG ELEMENTS ===', 'info');
+
+            const nodes = document.querySelectorAll('.tree-node');
+            addLog(`Found ${nodes.length} tree nodes`, nodes.length > 0 ? 'success' : 'error');
+
+            const links = document.querySelectorAll('.tree-link');
+            addLog(`Found ${links.length} tree links`, links.length > 0 ? 'success' : 'error');
+
+            if (links.length === 0) {
+                addLog('❌ NO LINKS FOUND! This is the problem.', 'error');
+                addLog('Checking SVG structure...', 'warning');
+
+                const svg = document.querySelector('#familyTree');
+                const mainGroup = svg.querySelector('.main-group');
+                const linksGroup = svg.querySelector('.links');
+
+                addLog(`SVG exists: ${!!svg}`, svg ? 'success' : 'error');
+                addLog(`Main group exists: ${!!mainGroup}`, mainGroup ? 'success' : 'error');
+                addLog(`Links group exists: ${!!linksGroup}`, linksGroup ? 'success' : 'error');
+
+                if (linksGroup) {
+                    const pathsInGroup = linksGroup.querySelectorAll('path');
+                    addLog(`Paths in links group: ${pathsInGroup.length}`, pathsInGroup.length > 0 ? 'success' : 'error');
+                }
+            } else {
+                links.forEach((link, index) => {
+                    const styles = {
+                        stroke: link.getAttribute('stroke'),
+                        strokeWidth: link.getAttribute('stroke-width'),
+                        opacity: link.getAttribute('opacity'),
+                        fill: link.getAttribute('fill'),
+                        d: link.getAttribute('d') ? 'path defined' : 'NO PATH'
+                    };
+                    addLog(`Link ${index + 1}: ${JSON.stringify(styles)}`, 'success');
+                });
+
+                addLog(`\n✅ LINKS ARE VISIBLE! Check the tree above.`, 'success');
+            }
+
+            // Check members
+            const members = window.familyService.getAllMembers();
+            addLog(`\nTotal members in service: ${members.length}`, 'info');
+        }
+
+        // Auto-run on load
+        addLog('Debug test page loaded. Click "Run Test" to start.');
+    </script>
+</body>
+</html>
